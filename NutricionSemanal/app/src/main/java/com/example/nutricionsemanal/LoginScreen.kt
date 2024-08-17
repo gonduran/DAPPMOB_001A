@@ -49,6 +49,10 @@ fun LoginScreen(navController: NavHostController) {
         TextButton(onClick = { navController.navigate("recoverPassword") }) {
             Text("¿Olvidaste tu contraseña?")
         }
+
+        TextButton(onClick = { navController.navigate("register") }) {
+            Text("Registrarse")
+        }
     }
 }
 
