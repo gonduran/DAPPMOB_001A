@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Sincronica2</string>
+    <string name="str_usuario">Usuario</string>
+    <string name="str_contrasena">Contraseña</string>
+    <string name="str_iniciarsesion">Iniciar Sesion</string>
+    <string name="str_registrar"> | Registrar</string>
+    <string name="str_olvidecontrasena">Olvide Contraseña </string>
+</resources>

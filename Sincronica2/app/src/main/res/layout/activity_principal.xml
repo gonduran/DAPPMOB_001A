@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/my_backgroun"
+    tools:context=".PrincipalActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbard"
+        android:layout_width="match_parent"
+        android:layout_height="?android:attr/actionBarSize"
+        android:background="@color/green"
+        app:title="Inicio"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        android:elevation="4dp"
+        android:layout_alignParentTop="true" />
+
+    <TextView
+        android:id="@+id/text_view_list"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:padding="8dp"
+        android:background="@android:color/transparent"
+        android:textColor="@android:color/black"
+        android:layout_marginTop="100dp"
+        />
+
+</RelativeLayout>
