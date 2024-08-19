@@ -17,9 +17,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.alarmavisual.R
 import kotlinx.coroutines.delay
 
@@ -27,8 +29,8 @@ import kotlinx.coroutines.delay
 fun SplashScreen(navController: NavController) {
     // Controlar el tiempo de visualización del Splash Screen
     LaunchedEffect(key1 = true) {
-        delay(5000) // 5 segundos
-        navController.navigate("login") // Después de 5 segundos, navega al login
+        delay(4000) // 4 segundos
+        navController.navigate("login") // Después de 4 segundos, navega al login
     }
 
     // Animación de escala para la imagen y el texto
@@ -64,7 +66,7 @@ fun SplashScreen(navController: NavController) {
                     .scale(scale.value)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(64.dp))
             // Texto con animación de escala
             Text(
                 text = "Alarma Visual",
@@ -76,4 +78,11 @@ fun SplashScreen(navController: NavController) {
             )
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SplashScreenPreview() {
+    val navController = rememberNavController()
+    SplashScreen(navController = navController)
 }
