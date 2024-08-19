@@ -67,6 +67,11 @@ fun RegisterScreen(navController: NavHostController) {
         }
     }
 
+    // Lógica para validar el correo electrónico
+    fun isEmailValid(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -160,7 +165,8 @@ fun RegisterScreen(navController: NavHostController) {
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -175,6 +181,10 @@ fun RegisterScreen(navController: NavHostController) {
                     }
                     password != confirmPassword -> {
                         errorMessage = "Las contraseñas no coinciden"
+                        showError = true
+                    }
+                    !isEmailValid(email) -> {
+                        errorMessage = "Por favor, ingrese un correo válido"
                         showError = true
                     }
                     else -> {

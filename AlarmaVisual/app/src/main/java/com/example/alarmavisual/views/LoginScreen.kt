@@ -65,6 +65,11 @@ fun LoginScreen(navController: NavHostController) {
         }
     }
 
+    // Lógica para validar el correo electrónico
+    fun isEmailValid(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -137,6 +142,13 @@ fun LoginScreen(navController: NavHostController) {
                 if (user != null) {
                     // Si las credenciales son correctas, navega a la siguiente pantalla
                     navController.navigate("clockScreen")
+
+                } else if (email.isEmpty() || password.isEmpty()) {
+                        errorMessage = "Todos los campos son obligatorios"
+                        showError = true
+                } else if (!isEmailValid(email)) {
+                    errorMessage = "Por favor, ingrese un correo válido"
+                    showError = true
                 } else {
                     // Si las credenciales son incorrectas, mostrar un mensaje de error
                     errorMessage = "Correo o contraseña incorrectos"
