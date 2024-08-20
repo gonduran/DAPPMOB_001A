@@ -151,14 +151,6 @@ fun ClockScreen(navController: NavHostController) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun ClockPreview() {
-    AlarmaVisualTheme {
-        ClockScreen(navController = rememberNavController())
-    }
-}
-
 @Composable
 fun CheckAndRequestExactAlarmPermission(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -179,5 +171,14 @@ fun CheckAndRequestExactAlarmPermission(context: Context) {
                 Toast.makeText(context, "Error al abrir la configuración", Toast.LENGTH_LONG).show()
             }
         }
+    }
+}
+
+@Preview(apiLevel = 30, showBackground = true)
+@Composable
+fun ClockPreview() {
+    val navController = rememberNavController()
+    MaterialTheme {
+        ClockScreen(navController = navController)
     }
 }

@@ -29,8 +29,8 @@ import kotlinx.coroutines.delay
 fun SplashScreen(navController: NavController) {
     // Controlar el tiempo de visualización del Splash Screen
     LaunchedEffect(key1 = true) {
-        delay(4000) // 4 segundos
-        navController.navigate("login") // Después de 4 segundos, navega al login
+        delay(3000) // 3 segundos
+        navController.navigate("login")
     }
 
     // Animación de escala para la imagen y el texto
@@ -71,8 +71,6 @@ fun SplashScreen(navController: NavController) {
             Text(
                 text = "Alarma Visual",
                 style = MaterialTheme.typography.titleLarge,
-                //fontSize = 30.sp,
-                //fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.background,
                 modifier = Modifier.scale(scale.value)
             )
