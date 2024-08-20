@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.alarmavisual.ui.theme.AlarmaVisualTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -127,7 +128,8 @@ fun AlarmScreen(navController: NavController) {
 @Preview(showBackground = true)
 @Composable
 fun AlarmScreenPreview() {
-    AlarmaVisualTheme {
-        AlarmScreen(navController = NavHostController(LocalContext.current))
+    val navController = rememberNavController()
+    MaterialTheme {
+        AlarmScreen(navController = navController)
     }
 }
