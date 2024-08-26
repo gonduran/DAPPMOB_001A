@@ -17,6 +17,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
+// Guarda (email, password)
+val registeredUsers = mutableListOf<Pair<String, String>>()
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +39,13 @@ fun AppNavigator(navController: NavHostController) {
         composable("login") { LoginScreen(navController) }
         composable("register") { RegisterScreen(navController) }
         composable("recoverPassword") { RecoverPasswordScreen(navController) }
-        composable("minuta") {
+        composable("recetasScreen") { RecetasScreen(navController) }
+        composable("detalleReceta/{recetaIndex}") { backStackEntry ->
+            val recetaIndex = backStackEntry.arguments?.getString("recetaIndex")?.toInt() ?: 0
+            DetalleRecetaScreen(navController, recetaIndex)
+        }
+
+        /*composable("minuta") {
             val recetas = listOf(
                 Receta("Ensalada César", "Alto en proteínas, bajo en carbohidratos"),
                 Receta("Pasta al Pesto", "Fuente de carbohidratos y grasas saludables"),
@@ -45,6 +54,6 @@ fun AppNavigator(navController: NavHostController) {
                 Receta("Batido de frutas", "Fuente de antioxidantes y energía rápida")
             )
             MinutaScreen(navController = navController, recetas = recetas)
-        }
+        }*/
     }
 }
