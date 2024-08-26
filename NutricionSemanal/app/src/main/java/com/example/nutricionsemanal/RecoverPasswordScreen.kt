@@ -1,5 +1,6 @@
 package com.example.nutricionsemanal
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -12,6 +13,7 @@ import androidx.navigation.NavHostController
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.compose.rememberNavController
 
@@ -25,10 +27,17 @@ fun RecoverPasswordScreen(navController: NavHostController) {
         Color(0xFFCDDC39)
     )
 
+    val context = LocalContext.current
+
+    // Lógica para validar el correo electrónico
+    fun isEmailValid(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(0.dp)
             .background(Brush.verticalGradient(gradientColors)),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -52,8 +61,40 @@ fun RecoverPasswordScreen(navController: NavHostController) {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { /* Lógica de recuperación de contraseña */ }) {
+        Button(onClick = {
+            /* Lógica de recuperación de contraseña */
+            if (email.isEmpty()) {
+                // Muestra un Toast de alerta
+                Toast.makeText(
+                    context,
+                    "El correo electrónico es obligatorio.",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else if (!isEmailValid(email)) {
+                // Muestra un Toast de alerta
+                Toast.makeText(
+                    context,
+                    "Por favor, ingrese un correo válido.",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                // Muestra un Toast de alerta
+                Toast.makeText(
+                    context,
+                    "Enviado correo con instrucciones.",
+                    Toast.LENGTH_LONG
+                ).show()
+                // Falta agregar Lógica para enviar instrucciones de recuperación de contraseña
+                navController.navigate("login")
+            }
+        }) {
             Text(text = "Enviar instrucciones")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(onClick = { navController.navigate("login") }) {
+            Text("Volver")
         }
     }
 }
