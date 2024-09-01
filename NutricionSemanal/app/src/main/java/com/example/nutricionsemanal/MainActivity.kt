@@ -16,44 +16,37 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
-// Guarda (email, password)
-val registeredUsers = mutableListOf<Pair<String, String>>()
+import com.example.nutricionsemanal.receta.RecetaRepository
+import com.example.nutricionsemanal.user.InMemoryUserRepository
+import com.example.nutricionsemanal.user.UserRepository
 
 class MainActivity : ComponentActivity() {
+    // Crear una instancia de UserRepository
+    private val userRepository: UserRepository = InMemoryUserRepository()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             NutricionSemanalTheme {
                 val navController = rememberNavController()
-                AppNavigator(navController)
+                val recetaRepository = RecetaRepository()
+                AppNavigator(navController, userRepository, recetaRepository = recetaRepository)
             }
         }
     }
 }
 
 @Composable
-fun AppNavigator(navController: NavHostController) {
+fun AppNavigator(navController: NavHostController, userRepository: UserRepository, recetaRepository: RecetaRepository) {
     NavHost(navController = navController, startDestination = "login") {
-        composable("login") { LoginScreen(navController) }
-        composable("register") { RegisterScreen(navController) }
-        composable("recoverPassword") { RecoverPasswordScreen(navController) }
-        composable("recetasScreen") { RecetasScreen(navController) }
+        composable("login") { LoginScreen(navController = navController, userRepository = userRepository) }
+        composable("register") { RegisterScreen(navController = navController, userRepository = userRepository) }
+        composable("recoverPassword") { RecoverPasswordScreen(navController = navController, userRepository = userRepository) }
+        composable("recetasScreen") { RecetasScreen(navController = navController, recetaRepository = recetaRepository) }
         composable("detalleReceta/{recetaIndex}") { backStackEntry ->
             val recetaIndex = backStackEntry.arguments?.getString("recetaIndex")?.toInt() ?: 0
-            DetalleRecetaScreen(navController, recetaIndex)
+            DetalleRecetaScreen(navController = navController, recetaIndex = recetaIndex, recetaRepository = recetaRepository)
         }
-
-        /*composable("minuta") {
-            val recetas = listOf(
-                Receta("Ensalada César", "Alto en proteínas, bajo en carbohidratos"),
-                Receta("Pasta al Pesto", "Fuente de carbohidratos y grasas saludables"),
-                Receta("Pollo a la plancha", "Bajo en calorías y alto en proteínas"),
-                Receta("Sopa de verduras", "Rico en fibra y vitaminas"),
-                Receta("Batido de frutas", "Fuente de antioxidantes y energía rápida")
-            )
-            MinutaScreen(navController = navController, recetas = recetas)
-        }*/
     }
 }

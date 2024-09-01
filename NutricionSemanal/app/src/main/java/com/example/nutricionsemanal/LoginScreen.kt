@@ -18,9 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import com.example.nutricionsemanal.user.InMemoryUserRepository
+import com.example.nutricionsemanal.user.UserRepository
 
 @Composable
-fun LoginScreen(navController: NavHostController) {
+fun LoginScreen(navController: NavHostController, userRepository: UserRepository) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -90,7 +92,25 @@ fun LoginScreen(navController: NavHostController) {
                 ).show()
             } else {
 
-                // Buscar al usuario registrado
+                when {
+                    !userRepository.validateCredentials(email, password) -> {
+                        Toast.makeText(
+                            context,
+                            "Usuario o contraseña invalidos.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    else -> {
+                        val userName = userRepository.getUserName(email)
+                        Toast.makeText(
+                            context,
+                            "Inicio de sesión exitoso. Bienvenido $userName!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        navController.navigate("recetasScreen")
+                    }
+                }
+                /*// Buscar al usuario registrado
                 val user = registeredUsers.find { it.first == email && it.second == password }
                 if (user != null) {
                     // Si las credenciales son correctas, navega a la siguiente pantalla
@@ -107,7 +127,7 @@ fun LoginScreen(navController: NavHostController) {
                         Toast.LENGTH_LONG
                     ).show()
 
-                }
+                }*/
             }
 
         }) {
@@ -129,6 +149,6 @@ fun LoginScreen(navController: NavHostController) {
 fun LoginPreview() {
     val navController = rememberNavController()
     MaterialTheme {
-        LoginScreen(navController = navController)
+        LoginScreen(navController = navController, userRepository = InMemoryUserRepository())
     }
 }

@@ -17,9 +17,11 @@ import androidx.compose.foundation.background
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.compose.rememberNavController
+import com.example.nutricionsemanal.user.InMemoryUserRepository
+import com.example.nutricionsemanal.user.UserRepository
 
 @Composable
-fun RegisterScreen(navController: NavHostController) {
+fun RegisterScreen(navController: NavHostController, userRepository: UserRepository) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -218,14 +220,40 @@ fun RegisterScreen(navController: NavHostController) {
                         Toast.LENGTH_LONG
                     ).show()
                 } else {
-                    Toast.makeText(
+
+                    when {
+                        userRepository.isUserRegistered(email) -> {
+                            Toast.makeText(
+                                context,
+                                "El correo ya está registrado.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        else -> {
+                            if (userRepository.registerUser(name, email, password)) {
+                                Toast.makeText(
+                                    context,
+                                    "Registro exitoso.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                navController.navigate("login")
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Error en el registro. Inténtalo nuevamente.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
+                    /*Toast.makeText(
                         context,
                         "Registro exitoso.",
                         Toast.LENGTH_LONG
                     ).show()
                     // Guardar el usuario si todo es correcto
                     registeredUsers.add(Pair(email, password))
-                    navController.navigate("login")
+                    navController.navigate("login")*/
                 }
             }
         }) {
@@ -245,6 +273,6 @@ fun RegisterScreen(navController: NavHostController) {
 fun RegisterPreview() {
     val navController = rememberNavController()
     MaterialTheme {
-        RegisterScreen(navController = navController)
+        RegisterScreen(navController = navController, userRepository = InMemoryUserRepository())
     }
 }
