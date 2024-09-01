@@ -19,10 +19,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.nutricionsemanal.receta.RecetaRepository
 
 @Composable
-fun DetalleRecetaScreen(navController: NavHostController, recetaIndex: Int) {
-    val receta = recetas[recetaIndex]
+fun DetalleRecetaScreen(navController: NavHostController, recetaIndex: Int, recetaRepository: RecetaRepository) {
+    val receta = recetaRepository.getRecetaByIndex(recetaIndex)
     val context = LocalContext.current
 
     // Define tus colores de degradado
@@ -31,57 +32,58 @@ fun DetalleRecetaScreen(navController: NavHostController, recetaIndex: Int) {
         Color(0xFFCDDC39)
     )
 
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(0.dp)
-            .background(Brush.verticalGradient(gradientColors)),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Imagen de la receta
-        Image(
-            painter = painterResource(id = R.drawable.comida_saludable_sf),
-            contentDescription = receta.nombre,
-            contentScale = ContentScale.Crop,
+    receta?.let {
+        Column(
             modifier = Modifier
-                .height(300.dp)
-                .fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+                .fillMaxSize()
+                .padding(0.dp)
+                .background(Brush.verticalGradient(gradientColors)),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Imagen de la receta
+            Image(
+                painter = painterResource(id = R.drawable.comida_saludable_sf),
+                contentDescription = receta.nombre,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .height(300.dp)
+                    .fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Nombre de la receta
-        Text(
-            text = receta.nombre,
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+            // Nombre de la receta
+            Text(
+                text = receta.nombre,
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Breve descripcion de la receta
-        Text(
-            text = receta.breveDescripcion,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+            // Breve descripcion de la receta
+            Text(
+                text = receta.breveDescripcion,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Detalle de la receta
-        Text(
-            text = receta.detalle,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .fillMaxWidth()
-        )
+            // Detalle de la receta
+            Text(
+                text = receta.detalle,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Botón para volver a la lista de recetas
-        Button(onClick = { navController.popBackStack() }) {
-            Text(text = "Volver")
+            // Botón para volver a la lista de recetas
+            Button(onClick = { navController.popBackStack() }) {
+                Text(text = "Volver")
+            }
         }
     }
 }
@@ -90,7 +92,8 @@ fun DetalleRecetaScreen(navController: NavHostController, recetaIndex: Int) {
 @Composable
 fun DetalleRecetaPreview() {
     val navController = rememberNavController()
+    val recetaRepository = RecetaRepository()
     MaterialTheme {
-        DetalleRecetaScreen(navController = navController, 0)
+        DetalleRecetaScreen(navController = navController, 0, recetaRepository = recetaRepository)
     }
 }

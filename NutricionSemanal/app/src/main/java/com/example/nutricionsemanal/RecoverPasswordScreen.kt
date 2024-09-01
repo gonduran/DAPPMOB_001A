@@ -16,9 +16,11 @@ import androidx.compose.foundation.background
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.compose.rememberNavController
+import com.example.nutricionsemanal.user.InMemoryUserRepository
+import com.example.nutricionsemanal.user.UserRepository
 
 @Composable
-fun RecoverPasswordScreen(navController: NavHostController) {
+fun RecoverPasswordScreen(navController: NavHostController, userRepository: UserRepository) {
     var email by remember { mutableStateOf("") }
 
     // Define tus colores de degradado
@@ -63,29 +65,42 @@ fun RecoverPasswordScreen(navController: NavHostController) {
 
         Button(onClick = {
             /* Lógica de recuperación de contraseña */
-            if (email.isEmpty()) {
-                // Muestra un Toast de alerta
-                Toast.makeText(
-                    context,
-                    "El correo electrónico es obligatorio.",
-                    Toast.LENGTH_LONG
-                ).show()
-            } else if (!isEmailValid(email)) {
-                // Muestra un Toast de alerta
-                Toast.makeText(
-                    context,
-                    "Por favor, ingrese un correo válido.",
-                    Toast.LENGTH_LONG
-                ).show()
-            } else {
-                // Muestra un Toast de alerta
-                Toast.makeText(
-                    context,
-                    "Enviado correo con instrucciones.",
-                    Toast.LENGTH_LONG
-                ).show()
-                // Falta agregar Lógica para enviar instrucciones de recuperación de contraseña
-                navController.navigate("login")
+            when {
+                email.isEmpty() -> {
+                    // Muestra un Toast de alerta
+                    Toast.makeText(
+                        context,
+                        "El correo electrónico es obligatorio.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                !isEmailValid(email) -> {
+                    // Muestra un Toast de alerta
+                    Toast.makeText(
+                        context,
+                        "Por favor, ingrese un correo válido.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                !userRepository.isUserRegistered(email) -> {
+                    // Muestra un Toast de alerta si el correo no está registrado
+                    Toast.makeText(
+                        context,
+                        "Este correo no está registrado.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                else -> {
+                    // Simula el envío de un correo electrónico de recuperación
+                    userRepository.sendPasswordRecovery(email)
+                    Toast.makeText(
+                        context,
+                        "Enviado correo con instrucciones.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    // Navega de vuelta a la pantalla de login
+                    navController.navigate("login")
+                }
             }
         }) {
             Text(text = "Enviar instrucciones")
@@ -104,6 +119,6 @@ fun RecoverPasswordScreen(navController: NavHostController) {
 fun RecoverPasswordPreview() {
     val navController = rememberNavController()
     MaterialTheme {
-        RecoverPasswordScreen(navController = navController)
+        RecoverPasswordScreen(navController = navController, userRepository = InMemoryUserRepository())
     }
 }
