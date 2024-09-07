@@ -246,14 +246,6 @@ fun RegisterScreen(navController: NavHostController, userRepository: UserReposit
                             }
                         }
                     }
-                    /*Toast.makeText(
-                        context,
-                        "Registro exitoso.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    // Guardar el usuario si todo es correcto
-                    registeredUsers.add(Pair(email, password))
-                    navController.navigate("login")*/
                 }
             }
         }) {

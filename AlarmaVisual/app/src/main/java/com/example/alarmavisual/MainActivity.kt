@@ -12,11 +12,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.alarmavisual.user.InMemoryUserRepository
+import com.example.alarmavisual.user.UserRepository
 
 // Guarda (email, password)
 val registeredUsers = mutableListOf<Pair<String, String>>()
 
 class MainActivity : ComponentActivity() {
+    // Crear una instancia de UserRepository
+    private val userRepository: UserRepository = InMemoryUserRepository()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,22 +38,22 @@ class MainActivity : ComponentActivity() {
                     navigateTo = intent?.getStringExtra("navigate_to")
                 }
 
-                AppNavigator(navController, navigateTo)
+                AppNavigator(navController, navigateTo, userRepository)
             }
         }
     }
 }
 
 @Composable
-fun AppNavigator(navController: NavHostController, navigateTo: String?) {
+fun AppNavigator(navController: NavHostController, navigateTo: String?, userRepository: UserRepository) {
     // Determina si la pantalla inicial es "alarmScreen" o "splash"
     val startDestination = if (navigateTo == "alarmScreen") "activateAlarm" else "splash"
 
     NavHost(navController = navController, startDestination = startDestination) {
         composable("splash") { SplashScreen(navController) }
-        composable("login") { LoginScreen(navController) }
-        composable("register") { RegisterScreen(navController) }
-        composable("recoverPassword") { RecoverPasswordScreen(navController) }
+        composable("login") { LoginScreen(navController = navController, userRepository = userRepository) }
+        composable("register") { RegisterScreen(navController = navController, userRepository = userRepository) }
+        composable("recoverPassword") { RecoverPasswordScreen(navController = navController, userRepository = userRepository) }
         composable("clockScreen") { ClockScreen(navController = navController) }
         composable("activateAlarm") { AlarmScreen(navController = navController) }
     }

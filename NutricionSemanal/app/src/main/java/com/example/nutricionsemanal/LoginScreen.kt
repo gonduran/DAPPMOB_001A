@@ -110,24 +110,6 @@ fun LoginScreen(navController: NavHostController, userRepository: UserRepository
                         navController.navigate("recetasScreen")
                     }
                 }
-                /*// Buscar al usuario registrado
-                val user = registeredUsers.find { it.first == email && it.second == password }
-                if (user != null) {
-                    // Si las credenciales son correctas, navega a la siguiente pantalla
-                    Toast.makeText(
-                        context,
-                        "Login exitoso.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    navController.navigate("recetasScreen")
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Usuario o contraseña invalidos.",
-                        Toast.LENGTH_LONG
-                    ).show()
-
-                }*/
             }
 
         }) {

@@ -5,7 +5,9 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -14,23 +16,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
-import com.example.alarmavisual.registeredUsers
-import kotlinx.coroutines.delay
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.launch
+import com.example.alarmavisual.R
+import com.example.alarmavisual.user.InMemoryUserRepository
+import com.example.alarmavisual.user.UserRepository
+import kotlinx.coroutines.delay
 
 @Composable
-fun LoginScreen(navController: NavHostController) {
+fun LoginScreen(navController: NavHostController, userRepository: UserRepository) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -39,10 +44,10 @@ fun LoginScreen(navController: NavHostController) {
 
     val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
     val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
-    val context = LocalContext.current // Obtener el contexto actual para la vibración
+    val context = LocalContext.current
 
-    // Función para activar la vibración
-    fun vibrateDevice() {
+    // Función lambda para vibración
+    val vibrateDevice: () -> Unit = {
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
@@ -50,34 +55,53 @@ fun LoginScreen(navController: NavHostController) {
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
 
-        vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-    }
-
-    // Función para lanzar un efecto para controlar el parpadeo y el tiempo de visibilidad
-    LaunchedEffect(showError) {
-        if (showError) {
-            repeat(10) {
-                colorIndex = (colorIndex + 1) % errorColors.size
-                vibrateDevice()
-                delay(500)
-            }
-            showError = false
+        try {
+            vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error al activar la vibración", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // Lógica para validar el correo electrónico
-    fun isEmailValid(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    // Función para manejar los efectos de error
+    @Composable
+    fun handleErrorEffect(vibrationAction: () -> Unit) {
+        LaunchedEffect(showError) {
+            if (showError) {
+                repeat(10) {
+                    colorIndex = (colorIndex + 1) % errorColors.size
+                    vibrationAction()
+                    delay(500)
+                }
+                showError = false
+            }
+        }
     }
+
+    // Ejecutar el efecto de error cuando showError es true
+    handleErrorEffect(vibrateDevice)
+
+    // Lambda para validar email
+    val isEmailValid: (String) -> Boolean = {
+        android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches()
+    }
+
+    // Definir colores de degradado
+    val gradientColors = listOf(Color(0xFFFFFFFF), Color(0xFF77A8AF))
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Brush.verticalGradient(gradientColors))
             .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.logoreloj),
+            contentDescription = "Nutrición Semanal",
+            modifier = Modifier.size(180.dp)
+        )
+
         Text(
             text = "Iniciar sesión",
             style = MaterialTheme.typography.headlineSmall,
@@ -85,7 +109,7 @@ fun LoginScreen(navController: NavHostController) {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campo para el correo electrónico
+        // Campo de correo electrónico
         TextField(
             value = email,
             onValueChange = { email = it },
@@ -102,7 +126,7 @@ fun LoginScreen(navController: NavHostController) {
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Campo para la contraseña
+        // Campo de contraseña
         TextField(
             value = password,
             onValueChange = { password = it },
@@ -134,28 +158,35 @@ fun LoginScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Botón personalizado para iniciar sesión
+        // Botón de inicio de sesión
         Button(
             onClick = {
-                // Buscar al usuario registrado
-                val user = registeredUsers.find { it.first == email && it.second == password }
-                if (user != null) {
-                    // Si las credenciales son correctas, navega a la siguiente pantalla
-                    navController.navigate("clockScreen")
-
-                } else if (email.isEmpty() || password.isEmpty()) {
-                        errorMessage = "Todos los campos son obligatorios"
-                        showError = true
-                } else if (!isEmailValid(email)) {
-                    errorMessage = "Por favor, ingrese un correo válido"
-                    showError = true
-                } else {
-                    // Si las credenciales son incorrectas, mostrar un mensaje de error
-                    errorMessage = "Correo o contraseña incorrectos"
+                try {
+                    when {
+                        email.isEmpty() || password.isEmpty() -> {
+                            errorMessage = "Todos los campos son obligatorios"
+                            showError = true
+                        }
+                        !isEmailValid(email) -> {
+                            errorMessage = "Por favor, ingrese un correo válido"
+                            showError = true
+                        }
+                        !userRepository.validateCredentials(email, password) -> {
+                            errorMessage = "Correo o contraseña inválidos"
+                            showError = true
+                        }
+                        else -> {
+                            val userName = userRepository.getUserName(email)
+                            errorMessage = "Inicio de sesión exitoso. ¡Bienvenido $userName!"
+                            showError = true
+                            navController.navigate("clockScreen")
+                        }
+                    }
+                } catch (e: Exception) {
+                    errorMessage = "Error al iniciar sesión."
                     showError = true
                 }
             },
-
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
@@ -166,12 +197,7 @@ fun LoginScreen(navController: NavHostController) {
                 .padding(8.dp)
                 .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
         ) {
-
-            Text(
-                text = "Iniciar sesión",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Text(text = "Iniciar sesión", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -203,6 +229,6 @@ fun LoginScreen(navController: NavHostController) {
 fun LoginPreview() {
     val navController = rememberNavController()
     MaterialTheme {
-        LoginScreen(navController = navController)
+        LoginScreen(navController = navController, userRepository = InMemoryUserRepository())
     }
 }
