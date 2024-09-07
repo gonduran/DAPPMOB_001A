@@ -19,12 +19,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.alarmavisual.alarm.CustomAlarmManager
 import com.example.alarmavisual.ui.theme.AlarmaVisualTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun AlarmScreen(navController: NavController) {
+fun AlarmScreen(navController: NavController, alarmManager: CustomAlarmManager) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var colorIndex by remember { mutableStateOf(0) }
@@ -84,7 +85,7 @@ fun AlarmScreen(navController: NavController) {
 
         // Navegar de vuelta a ClockScreen
         if (!navController.popBackStack()) {
-            navController.navigate("clockScreen") // Navegar manualmente si no puede hacer pop
+            navController.navigate("alarmListScreen") // Navegar manualmente si no puede hacer pop
         }
     }
 
@@ -129,7 +130,8 @@ fun AlarmScreen(navController: NavController) {
 @Composable
 fun AlarmScreenPreview() {
     val navController = rememberNavController()
+    val alarmManager = CustomAlarmManager(context = LocalContext.current)
     MaterialTheme {
-        AlarmScreen(navController = navController)
+        AlarmScreen(navController = navController, alarmManager = alarmManager)
     }
 }

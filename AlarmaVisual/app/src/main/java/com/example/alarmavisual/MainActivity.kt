@@ -12,11 +12,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.alarmavisual.alarm.CustomAlarmManager
 import com.example.alarmavisual.user.InMemoryUserRepository
 import com.example.alarmavisual.user.UserRepository
-
-// Guarda (email, password)
-val registeredUsers = mutableListOf<Pair<String, String>>()
 
 class MainActivity : ComponentActivity() {
     // Crear una instancia de UserRepository
@@ -29,6 +27,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AlarmaVisualTheme {
                 val navController = rememberNavController()
+                val alarmManager = CustomAlarmManager(context = this)
 
                 // Escuchar cambios en el Intent y navegar en consecuencia
                 var navigateTo by remember { mutableStateOf(intent?.getStringExtra("navigate_to")) }
@@ -38,14 +37,14 @@ class MainActivity : ComponentActivity() {
                     navigateTo = intent?.getStringExtra("navigate_to")
                 }
 
-                AppNavigator(navController, navigateTo, userRepository)
+                AppNavigator(navController, navigateTo, userRepository, alarmManager)
             }
         }
     }
 }
 
 @Composable
-fun AppNavigator(navController: NavHostController, navigateTo: String?, userRepository: UserRepository) {
+fun AppNavigator(navController: NavHostController, navigateTo: String?, userRepository: UserRepository, alarmManager : CustomAlarmManager) {
     // Determina si la pantalla inicial es "alarmScreen" o "splash"
     val startDestination = if (navigateTo == "alarmScreen") "activateAlarm" else "splash"
 
@@ -54,7 +53,17 @@ fun AppNavigator(navController: NavHostController, navigateTo: String?, userRepo
         composable("login") { LoginScreen(navController = navController, userRepository = userRepository) }
         composable("register") { RegisterScreen(navController = navController, userRepository = userRepository) }
         composable("recoverPassword") { RecoverPasswordScreen(navController = navController, userRepository = userRepository) }
-        composable("clockScreen") { ClockScreen(navController = navController) }
-        composable("activateAlarm") { AlarmScreen(navController = navController) }
+
+        composable("alarmListScreen") { AlarmListScreen(navController = navController, alarmManager = alarmManager) }
+        composable("addAlarmScreen") { AddAlarmScreen(navController = navController, alarmManager = alarmManager) }
+        // Pasar el alarmId como argumento
+        composable("editAlarmScreen/{alarmId}") { backStackEntry ->
+            val alarmId = backStackEntry.arguments?.getString("alarmId")
+            if (alarmId != null) {
+                EditAlarmScreen(navController = navController, alarmManager = alarmManager, alarmId = alarmId)
+            }
+        }
+
+        composable("activateAlarm") { AlarmScreen(navController = navController, alarmManager = alarmManager) }
     }
 }

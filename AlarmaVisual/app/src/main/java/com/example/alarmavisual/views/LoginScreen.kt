@@ -179,7 +179,7 @@ fun LoginScreen(navController: NavHostController, userRepository: UserRepository
                             val userName = userRepository.getUserName(email)
                             errorMessage = "Inicio de sesión exitoso. ¡Bienvenido $userName!"
                             showError = true
-                            navController.navigate("clockScreen")
+                            navController.navigate("alarmListScreen")
                         }
                     }
                 } catch (e: Exception) {
