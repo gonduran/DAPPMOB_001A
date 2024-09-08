@@ -2,6 +2,7 @@ package com.example.alarmavisual
 
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -27,7 +28,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             AlarmaVisualTheme {
                 val navController = rememberNavController()
-                val alarmManager = CustomAlarmManager(context = this)
+                val alarmManager = try {
+                    CustomAlarmManager(context = this)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Error initializing alarmManager: ${e.message}", Toast.LENGTH_LONG).show()
+                    null // Return null in case of error
+                }
 
                 // Escuchar cambios en el Intent y navegar en consecuencia
                 var navigateTo by remember { mutableStateOf(intent?.getStringExtra("navigate_to")) }
@@ -37,7 +43,11 @@ class MainActivity : ComponentActivity() {
                     navigateTo = intent?.getStringExtra("navigate_to")
                 }
 
-                AppNavigator(navController, navigateTo, userRepository, alarmManager)
+                alarmManager?.let {
+                    AppNavigator(navController, intent?.getStringExtra("navigate_to"), userRepository, it)
+                } ?: run {
+                    Toast.makeText(this, "Failed to initialize alarm manager", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
@@ -59,8 +69,10 @@ fun AppNavigator(navController: NavHostController, navigateTo: String?, userRepo
         // Pasar el alarmId como argumento
         composable("editAlarmScreen/{alarmId}") { backStackEntry ->
             val alarmId = backStackEntry.arguments?.getString("alarmId")
-            if (alarmId != null) {
-                EditAlarmScreen(navController = navController, alarmManager = alarmManager, alarmId = alarmId)
+            alarmId?.let {
+                EditAlarmScreen(navController = navController, alarmManager = alarmManager, alarmId = it)
+            } ?: run {
+                Toast.makeText(navController.context, "Error: Alarm ID not found", Toast.LENGTH_LONG).show()
             }
         }
 

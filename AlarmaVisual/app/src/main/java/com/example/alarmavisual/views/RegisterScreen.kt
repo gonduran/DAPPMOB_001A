@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -45,6 +46,7 @@ fun RegisterScreen(navController: NavHostController, userRepository: UserReposit
     var passwordError by remember { mutableStateOf<String?>(null) }
     var confirmPasswordError by remember { mutableStateOf<String?>(null) }
     var isRegistrationSuccessful by remember { mutableStateOf(false) } // Variable para controlar si el registro fue exitoso
+    var isPasswordFocused by remember { mutableStateOf(false) } // Para saber si el campo tiene el foco
 
     val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
     val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
@@ -218,8 +220,20 @@ fun RegisterScreen(navController: NavHostController, userRepository: UserReposit
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-            )
+            ),
+            modifier = Modifier.onFocusChanged { focusState ->
+                isPasswordFocused = focusState.isFocused
+            }
         )
+        // Mostrar el texto de ayuda solo cuando el campo tiene el foco
+        if (isPasswordFocused) {
+            Text(
+                text = "Debe tener al menos 6 caracteres, un dígito, un carácter especial y sin secuencias consecutivas de dígitos.",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+            )
+        }
         Spacer(modifier = Modifier.height(8.dp))
 
         // Campo Confirmar Contraseña
