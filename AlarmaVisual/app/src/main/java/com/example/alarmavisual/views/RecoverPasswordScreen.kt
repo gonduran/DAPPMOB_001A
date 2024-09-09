@@ -5,15 +5,19 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,14 +25,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.alarmavisual.R
 import kotlinx.coroutines.delay
+import com.example.alarmavisual.user.InMemoryUserRepository
+import com.example.alarmavisual.user.UserRepository
 
 @Composable
-fun RecoverPasswordScreen(navController: NavHostController) {
+fun RecoverPasswordScreen(navController: NavHostController, userRepository: UserRepository) {
     var email by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
     var colorIndex by remember { mutableStateOf(0) }
+    var isRegistrationSuccessful by remember { mutableStateOf(false) } // Variable para controlar si el registro fue exitoso
 
     // Colores de error para el parpadeo
     val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
@@ -36,43 +44,98 @@ fun RecoverPasswordScreen(navController: NavHostController) {
 
     val context = LocalContext.current
 
-    // Función para activar la vibración
-    fun vibrateDevice() {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator
-        } else {
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
-
-        vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-    }
-
-    // Función para efecto para mostrar el mensaje de error con cambio de colores y vibración
-    LaunchedEffect(showError) {
-        if (showError) {
-            repeat(10) {
-                colorIndex = (colorIndex + 1) % errorColors.size
-                vibrateDevice()
-                delay(500)
+    // Función lambda para la vibración
+    val vibrateDevice: () -> Unit = {
+        try {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                vibratorManager.defaultVibrator
+            } else {
+                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             }
-            showError = false
+            vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error al activar la vibración", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // Lógica para validar el correo electrónico
-    fun isEmailValid(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    // Función para mostrar el error y aplicar vibración
+    @Composable
+    fun handleError(effect: () -> Unit) {
+        LaunchedEffect(showError) {
+            if (showError) {
+                repeat(10) {
+                    colorIndex = (colorIndex + 1) % errorColors.size
+                    effect() // Llamar al efecto (vibración) pasado como parámetro
+                    delay(500)
+                }
+                showError = false
+            }
+        }
     }
+
+    // Delay y navegación después de un registro exitoso
+    LaunchedEffect(isRegistrationSuccessful) {
+        if (isRegistrationSuccessful) {
+            delay(2000)
+            navController.navigate("login")
+        }
+    }
+
+    // Llamada a la función de orden superior pasando la función lambda de vibración
+    handleError(vibrateDevice)
+
+    // Lambda para validar el correo electrónico
+    val isEmailValid: (String) -> Boolean = { email ->
+        android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+
+    // Lambda para manejar el click del botón
+    val handleRecoveryClick: () -> Unit = {
+        try {
+            when {
+                email.isEmpty() -> {
+                    errorMessage = "El correo electrónico es obligatorio"
+                    showError = true
+                }
+                !isEmailValid(email) -> {
+                    errorMessage = "Por favor, ingrese un correo válido"
+                    showError = true
+                }
+                !userRepository.isUserRegistered(email) -> {
+                    errorMessage = "Este correo no está registrado"
+                    showError = true
+                }
+                else -> {
+                    userRepository.sendPasswordRecovery(email)
+                    errorMessage = "Enviado correo con instrucciones"
+                    showError = true
+                    isRegistrationSuccessful = true // Activar la navegación después del registro exitoso
+                }
+            }
+        } catch (e: Exception) {
+            errorMessage = "Error en el envío de correo de recuperación"
+            showError = true
+        }
+    }
+
+    // Define los colores de degradado
+    val gradientColors = listOf(Color(0xFFFFFFFF), Color(0xFF77A8AF))
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Brush.verticalGradient(gradientColors))
             .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.logoreloj),
+            contentDescription = "Logo",
+            modifier = Modifier.size(180.dp)
+        )
+
         Text(
             text = "Recuperar Contraseña",
             style = MaterialTheme.typography.headlineSmall,
@@ -113,18 +176,7 @@ fun RecoverPasswordScreen(navController: NavHostController) {
 
         // Botón para enviar instrucciones
         Button(
-            onClick = {
-                if (email.isEmpty()) {
-                    errorMessage = "El correo electrónico es obligatorio"
-                    showError = true
-                } else if (!isEmailValid(email)) {
-                    errorMessage = "Por favor, ingrese un correo válido"
-                    showError = true
-                } else {
-                    // Falta agregar Lógica para enviar instrucciones de recuperación de contraseña
-                    navController.navigate("login")
-                }
-            },
+            onClick = handleRecoveryClick, // Usar la lambda definida
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
@@ -139,6 +191,12 @@ fun RecoverPasswordScreen(navController: NavHostController) {
                 fontWeight = FontWeight.Bold
             )
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(onClick = { navController.navigate("login") }) {
+            Text("Volver")
+        }
     }
 }
 
@@ -147,6 +205,6 @@ fun RecoverPasswordScreen(navController: NavHostController) {
 fun RecoverPasswordPreview() {
     val navController = rememberNavController()
     MaterialTheme {
-        RecoverPasswordScreen(navController = navController)
+        RecoverPasswordScreen(navController = navController, userRepository = InMemoryUserRepository())
     }
 }

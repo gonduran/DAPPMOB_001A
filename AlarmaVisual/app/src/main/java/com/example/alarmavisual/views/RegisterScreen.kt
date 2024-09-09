@@ -5,7 +5,9 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -14,21 +16,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.example.alarmavisual.registeredUsers
+import com.example.alarmavisual.R
 import kotlinx.coroutines.delay
+import com.example.alarmavisual.user.InMemoryUserRepository
+import com.example.alarmavisual.user.UserRepository
 
 @Composable
-fun RegisterScreen(navController: NavHostController) {
+fun RegisterScreen(navController: NavHostController, userRepository: UserRepository) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -36,12 +43,35 @@ fun RegisterScreen(navController: NavHostController) {
     var errorMessage by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
     var colorIndex by remember { mutableStateOf(0) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+    var confirmPasswordError by remember { mutableStateOf<String?>(null) }
+    var isRegistrationSuccessful by remember { mutableStateOf(false) } // Variable para controlar si el registro fue exitoso
+    var isPasswordFocused by remember { mutableStateOf(false) } // Para saber si el campo tiene el foco
 
-    // Lista de colores para el parpadeo del mensaje de error
     val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
     val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
 
     val context = LocalContext.current
+
+    // Función para manejar errores
+    fun handleError(action: () -> Unit) {
+        try {
+            action()
+        } catch (e: Exception) {
+            errorMessage = "Ocurrió un error inesperado: ${e.message}"
+            showError = true
+        }
+    }
+
+    // Función lambda para validar el correo
+    val isEmailValid: (String) -> Boolean = {
+        android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches()
+    }
+
+    // Función para validar cadenas de texto
+    val validarCaracteresMaliciosos: (String) -> Boolean = { input ->
+        "[<>&\"';*]".toRegex().containsMatchIn(input)
+    }
 
     // Función para activar la vibración
     fun vibrateDevice() {
@@ -55,7 +85,51 @@ fun RegisterScreen(navController: NavHostController) {
         vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
-    // Función para efecto de vibración, cambio de colores y control del mensaje de error
+    // Función para validar la contraseña
+    fun validarPassword(password: String): String? {
+        if (password.length < 6) {
+            return "La contraseña debe tener al menos 6 caracteres."
+        }
+        if (!password.any { it.isUpperCase() }) {
+            return "La contraseña debe tener al menos una letra mayúscula."
+        }
+        if (!password.any { it.isDigit() }) {
+            return "La contraseña debe tener al menos un dígito."
+        }
+        if (!password.any { "!@#\$%^&*()-_=+[]{}|;:'\",.<>?/`~".contains(it) }) {
+            return "La contraseña debe tener al menos un carácter especial."
+        }
+        // Validar si hay dígitos consecutivos en secuencia (ascendente o descendente) o repetidos
+        for (i in 0 until password.length - 2) {
+            val char1 = password[i]
+            val char2 = password[i + 1]
+            val char3 = password[i + 2]
+
+            // Verificar si son dígitos consecutivos iguales (como "111", "222")
+            if (char1.isDigit() && char1 == char2 && char2 == char3) {
+                return "No puede haber más de 2 dígitos consecutivos iguales."
+            }
+
+            // Verificar si son dígitos consecutivos ascendentes (como "123", "234")
+            if (char1.isDigit() && char2.isDigit() && char3.isDigit()) {
+                val num1 = char1.toString().toInt()
+                val num2 = char2.toString().toInt()
+                val num3 = char3.toString().toInt()
+
+                if (num2 == num1 + 1 && num3 == num2 + 1) {
+                    return "No puede haber secuencias de 3 dígitos consecutivos ascendentes."
+                }
+
+                if (num2 == num1 - 1 && num3 == num2 - 1) {
+                    return "No puede haber secuencias de 3 dígitos consecutivos descendentes."
+                }
+            }
+        }
+        // Si todo está bien, retorna null (sin error)
+        return null
+    }
+
+    // Función para manejar la animación de error
     LaunchedEffect(showError) {
         if (showError) {
             repeat(10) {
@@ -67,19 +141,33 @@ fun RegisterScreen(navController: NavHostController) {
         }
     }
 
-    // Lógica para validar el correo electrónico
-    fun isEmailValid(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    // Delay y navegación después de un registro exitoso
+    LaunchedEffect(isRegistrationSuccessful) {
+        if (isRegistrationSuccessful) {
+            delay(2000)
+            navController.navigate("login")
+        }
     }
+
+    val gradientColors = listOf(
+        Color(0xFFFFFFFF),
+        Color(0xFF77A8AF)
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Brush.verticalGradient(gradientColors))
             .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.logoreloj),
+            contentDescription = "Logo Alarma Visual",
+            modifier = Modifier.size(180.dp)
+        )
+
         Text(
             text = "Registrarse",
             style = MaterialTheme.typography.headlineSmall,
@@ -97,9 +185,7 @@ fun RegisterScreen(navController: NavHostController) {
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -114,9 +200,7 @@ fun RegisterScreen(navController: NavHostController) {
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -124,7 +208,10 @@ fun RegisterScreen(navController: NavHostController) {
         // Campo Contraseña
         TextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = {
+                password = it
+                passwordError = validarPassword(it)
+            },
             label = { Text("Contraseña", color = MaterialTheme.colorScheme.onSurface) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
@@ -132,17 +219,30 @@ fun RegisterScreen(navController: NavHostController) {
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+            ),
+            modifier = Modifier.onFocusChanged { focusState ->
+                isPasswordFocused = focusState.isFocused
+            }
         )
+        // Mostrar el texto de ayuda solo cuando el campo tiene el foco
+        if (isPasswordFocused) {
+            Text(
+                text = "Debe tener al menos 6 caracteres, al menos una letra mayúscula, un dígito, un carácter especial y sin secuencias consecutivas de dígitos.",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+            )
+        }
         Spacer(modifier = Modifier.height(8.dp))
 
         // Campo Confirmar Contraseña
         TextField(
             value = confirmPassword,
-            onValueChange = { confirmPassword = it },
+            onValueChange = {
+                confirmPassword = it
+                confirmPasswordError = validarPassword(it)
+            },
             label = { Text("Confirmar contraseña", color = MaterialTheme.colorScheme.onSurface) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
@@ -150,14 +250,11 @@ fun RegisterScreen(navController: NavHostController) {
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Mostrar mensaje de error si los datos son incorrectos
         if (showError) {
             Text(
                 text = errorMessage,
@@ -174,27 +271,51 @@ fun RegisterScreen(navController: NavHostController) {
         // Botón para registrar el usuario
         Button(
             onClick = {
-                when {
-                    name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() -> {
-                        errorMessage = "Todos los campos son obligatorios"
-                        showError = true
-                    }
-                    password != confirmPassword -> {
-                        errorMessage = "Las contraseñas no coinciden"
-                        showError = true
-                    }
-                    !isEmailValid(email) -> {
-                        errorMessage = "Por favor, ingrese un correo válido"
-                        showError = true
-                    }
-                    else -> {
-                        // Guardar el usuario si todo es correcto
-                        registeredUsers.add(Pair(email, password))
-                        navController.navigate("login")
+                handleError {
+                    when {
+                        name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() -> {
+                            errorMessage = "Todos los campos son obligatorios."
+                            showError = true
+                        }
+                        !isEmailValid(email) -> {
+                            errorMessage = "Por favor, ingrese un correo válido."
+                            showError = true
+                        }
+                        validarCaracteresMaliciosos(name) || validarCaracteresMaliciosos(email) ||
+                                validarCaracteresMaliciosos(password) || validarCaracteresMaliciosos(confirmPassword) -> {
+                            errorMessage = "Alerta: Se detectaron caracteres potencialmente maliciosos."
+                            showError = true
+                        }
+                        passwordError != null -> {
+                            errorMessage = passwordError.toString()
+                            showError = true
+                        }
+                        confirmPasswordError != null -> {
+                            errorMessage = confirmPasswordError.toString()
+                            showError = true
+                        }
+                        password != confirmPassword -> {
+                            errorMessage = "Las contraseñas no coinciden."
+                            showError = true
+                        }
+                        else -> {
+                            if (userRepository.isUserRegistered(email)) {
+                                errorMessage = "El correo ya está registrado."
+                                showError = true
+                            } else {
+                                if (userRepository.registerUser(name, email, password)) {
+                                    errorMessage = "Registro exitoso."
+                                    showError = true
+                                    isRegistrationSuccessful = true // Activar la navegación después del registro exitoso
+                                } else {
+                                    errorMessage = "Error en el registro. Inténtalo nuevamente."
+                                    showError = true
+                                }
+                            }
+                        }
                     }
                 }
             },
-
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
@@ -211,6 +332,12 @@ fun RegisterScreen(navController: NavHostController) {
                 fontWeight = FontWeight.Bold
             )
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(onClick = { navController.navigate("login") }) {
+            Text("Volver")
+        }
     }
 }
 
@@ -219,6 +346,6 @@ fun RegisterScreen(navController: NavHostController) {
 fun RegisterPreview() {
     val navController = rememberNavController()
     MaterialTheme {
-        RegisterScreen(navController = navController)
+        RegisterScreen(navController = navController, userRepository = InMemoryUserRepository())
     }
 }
