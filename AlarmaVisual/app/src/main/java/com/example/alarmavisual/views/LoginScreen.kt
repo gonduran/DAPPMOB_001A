@@ -41,6 +41,7 @@ fun LoginScreen(navController: NavHostController, userRepository: UserRepository
     var errorMessage by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
     var colorIndex by remember { mutableStateOf(0) }
+    var isLoginSuccessful by remember { mutableStateOf(false) } // Variable para controlar si el login fue exitoso
 
     val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
     val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
@@ -79,6 +80,14 @@ fun LoginScreen(navController: NavHostController, userRepository: UserRepository
 
     // Ejecutar el efecto de error cuando showError es true
     handleErrorEffect(vibrateDevice)
+
+    // Función para manejar la navegación con retraso después de un login exitoso
+    LaunchedEffect(isLoginSuccessful) {
+        if (isLoginSuccessful) {
+            delay(2000) // Espera 2 segundos antes de navegar
+            navController.navigate("alarmListScreen")
+        }
+    }
 
     // Lambda para validar email
     val isEmailValid: (String) -> Boolean = {
@@ -179,7 +188,7 @@ fun LoginScreen(navController: NavHostController, userRepository: UserRepository
                             val userName = userRepository.getUserName(email)
                             errorMessage = "Inicio de sesión exitoso. ¡Bienvenido $userName!"
                             showError = true
-                            navController.navigate("alarmListScreen")
+                            isLoginSuccessful = true // Marcamos que el login fue exitoso para activar el delay y la navegación
                         }
                     }
                 } catch (e: Exception) {

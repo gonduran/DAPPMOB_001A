@@ -79,7 +79,7 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
     }
 
     // Verificar y solicitar permiso de alarma exacta si es necesario
-    CheckAndRequestExactAlarmPermission(context)
+    checkAndRequestExactAlarmPermission(context)
 
     Column(
         modifier = Modifier
@@ -176,7 +176,7 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
     }
 }
 
-fun CheckAndRequestExactAlarmPermission(context: Context) {
+fun checkAndRequestExactAlarmPermission(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         if (!alarmManager.canScheduleExactAlarms()) {
@@ -191,6 +191,15 @@ fun CheckAndRequestExactAlarmPermission(context: Context) {
                 Toast.makeText(context, "Error al abrir la configuración", Toast.LENGTH_LONG).show()
             }
         }
+    }
+}
+
+// Agrego función inline en este archivo para manejear errores
+inline fun handleOperationWithError(action: () -> Unit, onError: (Exception) -> Unit) {
+    try {
+        action()
+    } catch (e: Exception) {
+        onError(e)
     }
 }
 
@@ -214,7 +223,7 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
 
     if (isActive) {
         days.forEach { day ->
-            val dayOfWeek = daysOfWeekMap[day] ?: return@forEach // Si el día no es válido, continuar con el siguiente
+            val dayOfWeek = daysOfWeekMap[day] ?: return@forEach
             val calendar = Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, hour)
                 set(Calendar.MINUTE, minute)
@@ -222,14 +231,13 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
                 set(Calendar.DAY_OF_WEEK, dayOfWeek)
             }
 
-            // Si la hora y el día seleccionados ya pasaron, programarlo para la próxima semana
-            val currentDayOfWeek = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-            if (currentDayOfWeek > dayOfWeek || (currentDayOfWeek == dayOfWeek && System.currentTimeMillis() > calendar.timeInMillis)) {
+            if (calendar.timeInMillis < System.currentTimeMillis()) {
                 calendar.add(Calendar.WEEK_OF_YEAR, 1)
             }
 
             val intent = Intent(context, AlarmReceiver::class.java)
-            val pendingIntentId = dayOfWeek * 100 + hour * 60 + minute // ID único por cada día y hora
+            val pendingIntentId = dayOfWeek * 100 + hour * 60 + minute
+
             val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 PendingIntent.getBroadcast(
                     context, pendingIntentId, intent,
@@ -242,17 +250,18 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
                 )
             }
 
-            try {
+            // Usamos la función inline para manejar errores
+            handleOperationWithError({
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     calendar.timeInMillis,
                     pendingIntent
                 )
                 Toast.makeText(context, "Alarma programada para $day a las $time", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
+            }, { e ->
                 e.printStackTrace()
                 Toast.makeText(context, "Error al programar la alarma para $day: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+            })
         }
     } else {
         // Cancelar las alarmas si no está activa
@@ -264,7 +273,11 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
                 context, pendingIntentId, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
             )
-            alarmManager.cancel(pendingIntent)
+            handleOperationWithError({
+                alarmManager.cancel(pendingIntent)
+            }, { e ->
+                Toast.makeText(context, "Error al cancelar la alarma para $day: ${e.message}", Toast.LENGTH_LONG).show()
+            })
         }
         Toast.makeText(context, "Alarma desactivada", Toast.LENGTH_SHORT).show()
     }
@@ -274,11 +287,98 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
 @Composable
 fun AlarmListScreenPreview() {
     val navController = rememberNavController()
-    val alarmManager = CustomAlarmManager(context = LocalContext.current)
 
-    // Agregamos alarmas de ejemplo para el preview
-    alarmManager.addAlarm("07:30", listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sab", "Dom"), true)
-    alarmManager.addAlarm("08:45", listOf("Mar", "Jue"), false)
+    // Crear una lista ficticia de alarmas para el Preview
+    val fakeAlarms = listOf(
+        Alarm("07:30", listOf("Lun", "Mar", "Mié", "Jue", "Vie"), true),
+        Alarm("08:45", listOf("Mar", "Jue"), false)
+    )
 
-    AlarmListScreen(navController = navController, alarmManager = alarmManager)
+    // Pantalla de lista de alarmas, pasando la lista ficticia directamente
+    AlarmListScreen(
+        navController = navController,
+        fakeAlarms = fakeAlarms // Pasar directamente las alarmas simuladas
+    )
+}
+
+// Asegurarse de que Alarm sea una clase de datos accesible
+data class Alarm(
+    val time: String,
+    val days: List<String>,
+    val isActive: Boolean
+)
+
+@Composable
+fun AlarmListScreen(navController: NavHostController, fakeAlarms: List<Alarm>) {
+    // Definir el gradiente de fondo
+    val gradientColors = listOf(
+        Color(0xFFFFFFFF),
+        Color(0xFF77A8AF)
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(gradientColors)) // Aplicar el gradiente aquí
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Alarmas Configuradas", style = MaterialTheme.typography.headlineMedium)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Mostrar alarmas configuradas
+        if (fakeAlarms.isNotEmpty()) {
+            fakeAlarms.forEach { alarm ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 16.dp)
+                    ) {
+                        Text("Hora: ${alarm.time}", style = MaterialTheme.typography.bodyLarge)
+                        Text("Días: ${alarm.days.joinToString(", ")}", style = MaterialTheme.typography.bodyMedium)
+                        Text("Activa: ${if (alarm.isActive) "Sí" else "No"}", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    IconButton(
+                        onClick = {
+                            // Acción de edición
+                        },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.editar),
+                            contentDescription = "Editar Alarma"
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            // Acción de eliminación
+                        },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.despertador_eliminar),
+                            contentDescription = "Eliminar Alarma"
+                        )
+                    }
+                }
+            }
+        } else {
+            Text("No hay alarmas configuradas.")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = { navController.navigate("addAlarmScreen") }) {
+            Text("Agregar Alarma")
+        }
+    }
 }

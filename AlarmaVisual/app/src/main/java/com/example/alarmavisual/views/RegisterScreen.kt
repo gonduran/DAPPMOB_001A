@@ -228,7 +228,7 @@ fun RegisterScreen(navController: NavHostController, userRepository: UserReposit
         // Mostrar el texto de ayuda solo cuando el campo tiene el foco
         if (isPasswordFocused) {
             Text(
-                text = "Debe tener al menos 6 caracteres, un dígito, un carácter especial y sin secuencias consecutivas de dígitos.",
+                text = "Debe tener al menos 6 caracteres, al menos una letra mayúscula, un dígito, un carácter especial y sin secuencias consecutivas de dígitos.",
                 color = Color.Gray,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)

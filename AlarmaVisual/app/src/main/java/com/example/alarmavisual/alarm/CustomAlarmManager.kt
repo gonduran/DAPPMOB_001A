@@ -16,7 +16,7 @@ data class Alarm(
     var isActive: Boolean
 )
 
-class CustomAlarmManager(val context: Context) {
+open class CustomAlarmManager(val context: Context) {
 
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences("alarms_prefs", Context.MODE_PRIVATE)
 
@@ -28,14 +28,15 @@ class CustomAlarmManager(val context: Context) {
     }
 
     // Agregar una alarma a la lista
-    fun addAlarm(time: String, days: List<String>, isActive: Boolean, id: String = UUID.randomUUID().toString()) {
+    fun addAlarm(time: String, days: List<String>, isActive: Boolean, id: String = UUID.randomUUID().toString()): String {
         val alarm = Alarm(id, time, days, isActive)
         alarms.add(alarm)
         saveAlarmsToPrefs()
+        return id
     }
 
     // Obtener todas las alarmas
-    fun getAlarms(): List<Alarm> {
+    open fun getAlarms(): List<Alarm> {
         return alarms
     }
 
@@ -55,7 +56,7 @@ class CustomAlarmManager(val context: Context) {
     }
 
     // Eliminar una alarma
-    fun removeAlarm(alarm: Alarm) {
+    open fun removeAlarm(alarm: Alarm) {
         alarms.remove(alarm)
         saveAlarmsToPrefs()
     }

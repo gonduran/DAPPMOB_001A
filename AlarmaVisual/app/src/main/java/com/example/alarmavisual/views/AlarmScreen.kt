@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AlarmScreen(navController: NavController, alarmManager: CustomAlarmManager) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    //val scope = rememberCoroutineScope()
     var colorIndex by remember { mutableStateOf(0) }
     val colors = listOf(
         MaterialTheme.colorScheme.primary,

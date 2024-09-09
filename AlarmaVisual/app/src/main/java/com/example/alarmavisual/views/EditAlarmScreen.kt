@@ -216,8 +216,8 @@ fun EditAlarmScreenPreview() {
     val navController = rememberNavController()
     val alarmManager = CustomAlarmManager(context = LocalContext.current)
 
-    // Agregar una alarma de ejemplo para el preview
-    alarmManager.addAlarm("07:30", listOf("Lun", "Mar", "Mié"), true)
+    // Agregar una alarma de ejemplo con un ID válido para el preview
+    val alarmId = alarmManager.addAlarm("07:30", listOf("Lun", "Mar", "Mié"), true) // Devuelve el ID de la alarma
 
-    EditAlarmScreen(navController = navController, alarmManager = alarmManager, alarmId = "0") // ID de ejemplo
+    EditAlarmScreen(navController = navController, alarmManager = alarmManager, alarmId = alarmId.toString())
 }
