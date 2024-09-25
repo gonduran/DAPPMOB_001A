@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "455871682263",
+    "project_id": "alarmavisualapp",
+    "storage_bucket": "alarmavisualapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:455871682263:android:fcb450005802f227ef4292",
+        "android_client_info": {
+          "package_name": "com.example.alarmavisual"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBi16IINx92LFJNHwKZ41IkUfzL2JLR0iQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

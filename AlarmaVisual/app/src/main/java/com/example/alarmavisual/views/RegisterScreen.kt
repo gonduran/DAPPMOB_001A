@@ -33,6 +33,9 @@ import com.example.alarmavisual.R
 import kotlinx.coroutines.delay
 import com.example.alarmavisual.user.InMemoryUserRepository
 import com.example.alarmavisual.user.UserRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun RegisterScreen(navController: NavHostController, userRepository: UserRepository) {
@@ -52,6 +55,10 @@ fun RegisterScreen(navController: NavHostController, userRepository: UserReposit
     val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
 
     val context = LocalContext.current
+    // Firebase Auth instance
+    val auth = FirebaseAuth.getInstance()
+    // Firebase Firestore instance
+    val db = FirebaseFirestore.getInstance()
 
     // Función para manejar errores
     fun handleError(action: () -> Unit) {
@@ -299,19 +306,47 @@ fun RegisterScreen(navController: NavHostController, userRepository: UserReposit
                             showError = true
                         }
                         else -> {
-                            if (userRepository.isUserRegistered(email)) {
-                                errorMessage = "El correo ya está registrado."
-                                showError = true
-                            } else {
-                                if (userRepository.registerUser(name, email, password)) {
-                                    errorMessage = "Registro exitoso."
-                                    showError = true
-                                    isRegistrationSuccessful = true // Activar la navegación después del registro exitoso
-                                } else {
-                                    errorMessage = "Error en el registro. Inténtalo nuevamente."
-                                    showError = true
+                            // Registro en Firebase Authentication
+                            auth.createUserWithEmailAndPassword(email, password)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        // Registro exitoso
+                                        val user = auth.currentUser
+                                        // Guardar el nombre y correo en Firestore
+                                        val userMap = hashMapOf(
+                                            "name" to name,
+                                            "email" to email
+                                        )
+                                        db.collection("users").document(user?.uid ?: "")
+                                            .set(userMap)
+                                            .addOnSuccessListener {
+                                                // Enviar correo de verificación
+                                                user?.sendEmailVerification()
+                                                    ?.addOnCompleteListener { emailTask ->
+                                                        if (emailTask.isSuccessful) {
+                                                            errorMessage = "Registro exitoso. Por favor, verifica tu correo."
+                                                            showError = true
+                                                            isRegistrationSuccessful = true // Activar la navegación después del registro exitoso
+                                                        } else {
+                                                            errorMessage = "Error al enviar el correo de verificación: ${emailTask.exception?.message}"
+                                                            showError = true
+                                                        }
+                                                    }
+                                            }
+                                            .addOnFailureListener { e ->
+                                                errorMessage = "Error al guardar el usuario en Firestore: $e"
+                                                showError = true
+                                            }
+                                    } else {
+                                        if (task.exception is FirebaseAuthUserCollisionException) {
+                                            errorMessage = "El correo ya está registrado."
+                                            showError = true
+                                        } else {
+                                            errorMessage = "Error en el registro: ${task.exception?.message}. Inténtalo nuevamente."
+                                            showError = true
+                                        }
+                                    }
                                 }
-                            }
                         }
                     }
                 }

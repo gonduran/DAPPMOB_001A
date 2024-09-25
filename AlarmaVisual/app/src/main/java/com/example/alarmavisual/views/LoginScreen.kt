@@ -33,6 +33,8 @@ import com.example.alarmavisual.R
 import com.example.alarmavisual.user.InMemoryUserRepository
 import com.example.alarmavisual.user.UserRepository
 import kotlinx.coroutines.delay
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun LoginScreen(navController: NavHostController, userRepository: UserRepository) {
@@ -46,6 +48,10 @@ fun LoginScreen(navController: NavHostController, userRepository: UserRepository
     val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
     val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
     val context = LocalContext.current
+    // Firebase Auth instance
+    val auth = FirebaseAuth.getInstance()
+    // Firebase Firestore instance
+    val db = FirebaseFirestore.getInstance()
 
     // Función lambda para vibración
     val vibrateDevice: () -> Unit = {
@@ -180,15 +186,44 @@ fun LoginScreen(navController: NavHostController, userRepository: UserRepository
                             errorMessage = "Por favor, ingrese un correo válido"
                             showError = true
                         }
-                        !userRepository.validateCredentials(email, password) -> {
-                            errorMessage = "Correo o contraseña inválidos"
-                            showError = true
-                        }
                         else -> {
-                            val userName = userRepository.getUserName(email)
-                            errorMessage = "Inicio de sesión exitoso. ¡Bienvenido $userName!"
-                            showError = true
-                            isLoginSuccessful = true // Marcamos que el login fue exitoso para activar el delay y la navegación
+                            auth.signInWithEmailAndPassword(email, password)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        // Inicio de sesión exitoso, obtener el UID del usuario
+                                        val user = auth.currentUser
+                                        val userId = user?.uid
+
+                                        // Buscar el nombre del usuario en Firestore usando el UID
+                                        if (userId != null) {
+                                            db.collection("users").document(userId)
+                                                .get()
+                                                .addOnSuccessListener { document ->
+                                                    if (document.exists()) {
+                                                        // Obtener el nombre del documento en Firestore
+                                                        val userName = document.getString("name")
+
+                                                        errorMessage = "Inicio de sesión exitoso. ¡Bienvenido  $userName!"
+                                                        showError = true
+                                                        isLoginSuccessful = true // Marcamos que el login fue exitoso para activar el delay y la navegación
+                                                    } else {
+                                                        errorMessage = "Error: El usuario no tiene un nombre registrado."
+                                                        showError = true
+                                                    }
+                                                }
+                                                .addOnFailureListener { e ->
+                                                    errorMessage = "Error al recuperar el nombre: $e"
+                                                    showError = true
+                                                }
+                                        } else {
+                                            errorMessage = "Error: No se pudo obtener el UID del usuario."
+                                            showError = true
+                                        }
+                                    } else {
+                                        errorMessage = "Error en el inicio de sesión: ${task.exception?.message}"
+                                        showError = true
+                                    }
+                                }
                         }
                     }
                 } catch (e: Exception) {

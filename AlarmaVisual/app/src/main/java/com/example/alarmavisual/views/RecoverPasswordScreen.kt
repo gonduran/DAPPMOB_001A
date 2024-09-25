@@ -29,6 +29,8 @@ import com.example.alarmavisual.R
 import kotlinx.coroutines.delay
 import com.example.alarmavisual.user.InMemoryUserRepository
 import com.example.alarmavisual.user.UserRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun RecoverPasswordScreen(navController: NavHostController, userRepository: UserRepository) {
@@ -43,6 +45,10 @@ fun RecoverPasswordScreen(navController: NavHostController, userRepository: User
     val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
 
     val context = LocalContext.current
+    // Firebase Auth instance
+    val auth = FirebaseAuth.getInstance()
+    // Firebase Firestore instance
+    val db = FirebaseFirestore.getInstance()
 
     // Función lambda para la vibración
     val vibrateDevice: () -> Unit = {
@@ -102,15 +108,33 @@ fun RecoverPasswordScreen(navController: NavHostController, userRepository: User
                     errorMessage = "Por favor, ingrese un correo válido"
                     showError = true
                 }
-                !userRepository.isUserRegistered(email) -> {
-                    errorMessage = "Este correo no está registrado"
-                    showError = true
-                }
                 else -> {
-                    userRepository.sendPasswordRecovery(email)
-                    errorMessage = "Enviado correo con instrucciones"
-                    showError = true
-                    isRegistrationSuccessful = true // Activar la navegación después del registro exitoso
+                    // Verificar en Firestore si el correo está registrado
+                    db.collection("users")
+                        .whereEqualTo("email", email)
+                        .get()
+                        .addOnSuccessListener { documents ->
+                            if (!documents.isEmpty) {
+                                // El correo existe en Firestore, enviar el correo de recuperación
+                                auth.sendPasswordResetEmail(email)
+                                    .addOnCompleteListener { resetTask ->
+                                        if (resetTask.isSuccessful) {
+                                            errorMessage = "Correo de recuperación enviado"
+                                            showError = true
+                                            isRegistrationSuccessful = true // Activar la navegación después del registro exitoso
+                                        } else {
+                                            errorMessage = "Error: ${resetTask.exception?.message}"
+                                            showError = true
+                                        }
+                                    }
+                            } else {
+                                // El correo no está registrado en Firestore
+                                errorMessage = "El correo no está registrado."
+                                showError = true                            }
+                        }
+                        .addOnFailureListener { exception ->
+                            Toast.makeText(context, "Error al verificar el correo: $exception", Toast.LENGTH_LONG).show()
+                        }
                 }
             }
         } catch (e: Exception) {
