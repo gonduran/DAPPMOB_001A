@@ -11,6 +11,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,19 +37,26 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import com.example.alarmavisual.MainActivity
+import com.example.alarmavisual.alarm.Alarm
 import kotlinx.coroutines.delay
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmManager) {
+    val context = LocalContext.current
+
     val gradientColors = listOf(
         Color(0xFFFFFFFF),
         Color(0xFF77A8AF)
     )
 
-    val context = LocalContext.current
-    var alarmList by remember { mutableStateOf(alarmManager.getAlarms()) }
+    val alarmList = remember { mutableStateListOf<Alarm>() }
+    var isLoading by remember { mutableStateOf(true) }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var colorIndex by remember { mutableStateOf(0) }
@@ -81,6 +91,28 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
     // Verificar y solicitar permiso de alarma exacta si es necesario
     checkAndRequestExactAlarmPermission(context)
 
+    LaunchedEffect(Unit) {
+        try {
+            alarmManager.getAlarmsFromFirestore (context) { alarms ->
+                if (alarms.isNotEmpty()) {
+                    alarmList.clear()
+                    alarmList.addAll(alarms)
+                } else {
+                    errorMessage = "No hay alarmas configuradas."
+                    showError = true
+                }
+                isLoading = false
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            errorMessage = "Error al obtener alarmas: ${e.message}"
+            showError = true
+            isLoading = false
+        }
+    }
+    // Variable para controlar el estado del menú desplegable
+    var expanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -89,14 +121,50 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Menú superior con opciones de cerrar sesión y salir
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .wrapContentSize(Alignment.TopEnd)
+        ) {
+            IconButton(onClick = { expanded = true }) {
+                Icon(Icons.Filled.MoreVert, contentDescription = "Menu")
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Cerrar Sesión") },
+                    onClick = {
+                        FirebaseAuth.getInstance().signOut()
+                        navController.navigate("login") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Salir") },
+                    onClick = {
+                        (context as? MainActivity)?.finish()
+                    },
+                    leadingIcon = {
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Salir")
+                    }
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Alarmas Configuradas", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Mostrar alarmas configuradas
-        if (alarmList.isNotEmpty()) {
+        // Mostrar el estado de carga
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.size(48.dp))
+        } else if (alarmList.isNotEmpty()) {
             alarmList.forEach { alarm ->
                 Row(
                     modifier = Modifier
@@ -111,12 +179,14 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
                             .weight(1f)
                             .padding(end = 16.dp)
                     ) {
-                        Text("Hora: ${alarm.time}", style = MaterialTheme.typography.bodyLarge)
+                        Text(alarm.label, style = MaterialTheme.typography.bodyMedium)
+                        Text("Hora: ${alarm.time}", style = MaterialTheme.typography.bodyMedium)
                         Text("Días: ${alarm.days.joinToString(", ")}", style = MaterialTheme.typography.bodyMedium)
-                        Text("Activa: ${if (alarm.isActive) "Sí" else "No"}", style = MaterialTheme.typography.bodyMedium)
+                        Text("Activa: ${if (alarm.active) "Sí" else "No"}", style = MaterialTheme.typography.bodyMedium)
+                        Text("Repetir: ${if (alarm.repeat) "Sí" else "No"}", style = MaterialTheme.typography.bodyMedium)
 
                         // Activar o desactivar la alarma según el estado y los días seleccionados
-                        scheduleAlarm(context, alarm.time, alarm.isActive, alarm.days)
+                        scheduleAlarm(context, alarm.time, alarm.active, alarm.days)
                     }
 
                     // Botón para editar con icono
@@ -124,10 +194,10 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
                         onClick = {
                             navController.navigate("editAlarmScreen/${alarm.id}")
                         },
-                        modifier = Modifier.size(48.dp) // Ajustar tamaño
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.editar), // Reemplaza con el ID del recurso de imagen de edición
+                            painter = painterResource(id = R.drawable.editar),
                             contentDescription = "Editar Alarma"
                         )
                     }
@@ -135,23 +205,33 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
                     // Botón para eliminar con icono
                     IconButton(
                         onClick = {
-                            // Eliminar la alarma y actualizar la lista
-                            alarmManager.removeAlarm(alarm)
-                            alarmList = alarmManager.getAlarms() // Recargar la lista de alarmas
-                            errorMessage = "Alarma eliminada correctamente"
+                            alarmManager.deleteAlarmFromFirestore(alarm.id) { success ->
+                                if (success) {
+                                    // Eliminar localmente de la lista de alarmas para mejorar la respuesta de la UI
+                                    alarmList.remove(alarm)
+                                    errorMessage = "Alarma eliminada correctamente"
+                                } else {
+                                    errorMessage = "Error al eliminar la alarma"
+                                }
+                            }
+                            alarmManager.getAlarmsFromFirestore (context) { updatedAlarms ->
+                                alarmList.clear()
+                                alarmList.addAll(updatedAlarms)
+                            }
+                            //errorMessage = "Alarma eliminada correctamente"
                             showError = true
                         },
-                        modifier = Modifier.size(48.dp) // Ajustar tamaño
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.despertador_eliminar), // Reemplaza con el ID del recurso de imagen de eliminar
+                            painter = painterResource(id = R.drawable.despertador_eliminar),
                             contentDescription = "Eliminar Alarma"
                         )
                     }
                 }
             }
         } else {
-            Text("No hay alarmas configuradas.")
+            Text("No hay alarmas configuradas.", style = MaterialTheme.typography.bodyLarge)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -257,7 +337,7 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
                     calendar.timeInMillis,
                     pendingIntent
                 )
-                Toast.makeText(context, "Alarma programada para $day a las $time", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(context, "Alarma programada para $day a las $time", Toast.LENGTH_SHORT).show()
             }, { e ->
                 e.printStackTrace()
                 Toast.makeText(context, "Error al programar la alarma para $day: ${e.message}", Toast.LENGTH_LONG).show()
@@ -279,7 +359,7 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
                 Toast.makeText(context, "Error al cancelar la alarma para $day: ${e.message}", Toast.LENGTH_LONG).show()
             })
         }
-        Toast.makeText(context, "Alarma desactivada", Toast.LENGTH_SHORT).show()
+        //Toast.makeText(context, "Alarma desactivada", Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -290,8 +370,8 @@ fun AlarmListScreenPreview() {
 
     // Crear una lista ficticia de alarmas para el Preview
     val fakeAlarms = listOf(
-        Alarm("07:30", listOf("Lun", "Mar", "Mié", "Jue", "Vie"), true),
-        Alarm("08:45", listOf("Mar", "Jue"), false)
+        Alarm("0","07:30", listOf("Lun", "Mar", "Mié", "Jue", "Vie"), true, "Ejercicio",true),
+        Alarm("1","08:45", listOf("Mar", "Jue"), false,"Trabajo",true)
     )
 
     // Pantalla de lista de alarmas, pasando la lista ficticia directamente
@@ -300,13 +380,6 @@ fun AlarmListScreenPreview() {
         fakeAlarms = fakeAlarms // Pasar directamente las alarmas simuladas
     )
 }
-
-// Asegurarse de que Alarm sea una clase de datos accesible
-data class Alarm(
-    val time: String,
-    val days: List<String>,
-    val isActive: Boolean
-)
 
 @Composable
 fun AlarmListScreen(navController: NavHostController, fakeAlarms: List<Alarm>) {
@@ -343,9 +416,11 @@ fun AlarmListScreen(navController: NavHostController, fakeAlarms: List<Alarm>) {
                             .weight(1f)
                             .padding(end = 16.dp)
                     ) {
-                        Text("Hora: ${alarm.time}", style = MaterialTheme.typography.bodyLarge)
+                        Text(alarm.label, style = MaterialTheme.typography.bodyMedium)
+                        Text("Hora: ${alarm.time}", style = MaterialTheme.typography.bodyMedium)
                         Text("Días: ${alarm.days.joinToString(", ")}", style = MaterialTheme.typography.bodyMedium)
-                        Text("Activa: ${if (alarm.isActive) "Sí" else "No"}", style = MaterialTheme.typography.bodyMedium)
+                        Text("Activa: ${if (alarm.active) "Sí" else "No"}", style = MaterialTheme.typography.bodyMedium)
+                        Text("Repetir: ${if (alarm.repeat) "Sí" else "No"}", style = MaterialTheme.typography.bodyMedium)
                     }
                     IconButton(
                         onClick = {

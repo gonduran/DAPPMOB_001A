@@ -226,9 +226,143 @@ fun RecoverPasswordScreen(navController: NavHostController, userRepository: User
 
 @Preview(showBackground = true)
 @Composable
-fun RecoverPasswordPreview() {
+fun RecoverPasswordScreenPreview() {
     val navController = rememberNavController()
     MaterialTheme {
-        RecoverPasswordScreen(navController = navController, userRepository = InMemoryUserRepository())
+        RecoverPasswordFake(navController = navController, userRepository = InMemoryUserRepository())
+    }
+}
+
+@Composable
+fun RecoverPasswordFake(navController: NavHostController?, userRepository: UserRepository?) {
+    var email by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+    var showError by remember { mutableStateOf(false) }
+    var colorIndex by remember { mutableStateOf(0) }
+    var isRegistrationSuccessful by remember { mutableStateOf(false) }
+
+    val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
+    val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
+
+    // Función simulada para la vibración en lugar de depender del contexto
+    val vibrateDevice: () -> Unit = {
+        // Simulación de vibración
+    }
+
+    LaunchedEffect(showError) {
+        if (showError) {
+            repeat(10) {
+                colorIndex = (colorIndex + 1) % errorColors.size
+                vibrateDevice()
+                delay(500)
+            }
+            showError = false
+        }
+    }
+
+    LaunchedEffect(isRegistrationSuccessful) {
+        if (isRegistrationSuccessful) {
+            delay(2000)
+            // Simular navegación
+        }
+    }
+
+    val isEmailValid: (String) -> Boolean = {
+        android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches()
+    }
+
+    val handleRecoveryClick: () -> Unit = {
+        when {
+            email.isEmpty() -> {
+                errorMessage = "El correo electrónico es obligatorio"
+                showError = true
+            }
+            !isEmailValid(email) -> {
+                errorMessage = "Por favor, ingrese un correo válido"
+                showError = true
+            }
+            else -> {
+                errorMessage = "Correo de recuperación enviado"
+                showError = true
+                isRegistrationSuccessful = true
+            }
+        }
+    }
+
+    val gradientColors = listOf(Color(0xFFFFFFFF), Color(0xFF77A8AF))
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(gradientColors))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.logoreloj),
+            contentDescription = "Logo",
+            modifier = Modifier.size(180.dp)
+        )
+
+        Text(
+            text = "Recuperar Contraseña",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Campo de correo electrónico
+        TextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Correo electrónico", color = MaterialTheme.colorScheme.onSurface) },
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (showError) {
+            Text(
+                text = errorMessage,
+                color = animatedColor,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        Button(
+            onClick = handleRecoveryClick,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            Text(
+                text = "Enviar instrucciones",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(onClick = { /* Simular navegación */ }) {
+            Text("Volver")
+        }
     }
 }

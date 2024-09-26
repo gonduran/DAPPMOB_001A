@@ -376,11 +376,180 @@ fun RegisterScreen(navController: NavHostController, userRepository: UserReposit
     }
 }
 
+@Composable
+fun RegisterFake(navController: NavHostController?, userRepository: UserRepository?) {
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+    var showError by remember { mutableStateOf(false) }
+    var colorIndex by remember { mutableStateOf(0) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+    var confirmPasswordError by remember { mutableStateOf<String?>(null) }
+    var isRegistrationSuccessful by remember { mutableStateOf(false) }
+    var isPasswordFocused by remember { mutableStateOf(false) }
+
+    val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
+    val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
+
+    val context = LocalContext.current
+
+    // Función para activar la vibración
+    fun vibrateDevice() {
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+        vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+    }
+
+    // Función para manejar la animación de error
+    LaunchedEffect(showError) {
+        if (showError) {
+            repeat(10) {
+                colorIndex = (colorIndex + 1) % errorColors.size
+                vibrateDevice()
+                delay(500)
+            }
+            showError = false
+        }
+    }
+
+    // Delay y navegación después de un registro exitoso
+    LaunchedEffect(isRegistrationSuccessful) {
+        if (isRegistrationSuccessful) {
+            delay(2000)
+            navController?.navigate("login")
+        }
+    }
+
+    val gradientColors = listOf(
+        Color(0xFFFFFFFF),
+        Color(0xFF77A8AF)
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(gradientColors))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.logoreloj),
+            contentDescription = "Logo Alarma Visual",
+            modifier = Modifier.size(180.dp)
+        )
+
+        Text(
+            text = "Registrarse",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Campo Nombre
+        TextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Nombre") },
+            singleLine = true,
+            colors = TextFieldDefaults.colors()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Campo Correo Electrónico
+        TextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Correo electrónico") },
+            singleLine = true,
+            colors = TextFieldDefaults.colors()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Campo Contraseña
+        TextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Contraseña") },
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            colors = TextFieldDefaults.colors(),
+            modifier = Modifier.onFocusChanged { focusState ->
+                isPasswordFocused = focusState.isFocused
+            }
+        )
+        if (isPasswordFocused) {
+            Text(
+                text = "Debe tener al menos 6 caracteres, una letra mayúscula, un dígito, y un carácter especial.",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Campo Confirmar Contraseña
+        TextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Confirmar contraseña") },
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            colors = TextFieldDefaults.colors()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Mostrar mensajes de error
+        if (showError) {
+            Text(
+                text = errorMessage,
+                color = animatedColor,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // Botón para registrar el usuario
+        Button(
+            onClick = { /* Acción simulada para registro */ },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            Text(
+                text = "Registrarse",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(onClick = { navController?.navigate("login") }) {
+            Text("Volver")
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun RegisterPreview() {
-    val navController = rememberNavController()
+    // Usamos null para navController y userRepository en el preview
     MaterialTheme {
-        RegisterScreen(navController = navController, userRepository = InMemoryUserRepository())
+        RegisterFake(navController = null, userRepository = null)
     }
 }

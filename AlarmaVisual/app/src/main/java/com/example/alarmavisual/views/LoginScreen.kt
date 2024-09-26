@@ -271,8 +271,155 @@ fun LoginScreen(navController: NavHostController, userRepository: UserRepository
 @Preview(showBackground = true)
 @Composable
 fun LoginPreview() {
+    // Simula un `NavController` para el preview
     val navController = rememberNavController()
+
+    // Simula la pantalla de login
     MaterialTheme {
-        LoginScreen(navController = navController, userRepository = InMemoryUserRepository())
+        LoginScreenFake(navController = navController, userRepository = InMemoryUserRepository())
+    }
+}
+
+@Composable
+fun LoginScreenFake(navController: NavHostController, userRepository: UserRepository) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+    var showError by remember { mutableStateOf(false) }
+    var colorIndex by remember { mutableStateOf(0) }
+    var isLoginSuccessful by remember { mutableStateOf(false) } // Variable para controlar si el login fue exitoso
+
+    val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
+    val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
+    val context = LocalContext.current
+
+    // Lambda para validar email
+    val isEmailValid: (String) -> Boolean = {
+        android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches()
+    }
+
+    // Definir colores de degradado
+    val gradientColors = listOf(Color(0xFFFFFFFF), Color(0xFF77A8AF))
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(gradientColors))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.logoreloj),
+            contentDescription = "Nutrición Semanal",
+            modifier = Modifier.size(180.dp)
+        )
+
+        Text(
+            text = "Iniciar sesión",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Campo de correo electrónico
+        TextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Correo electrónico", color = MaterialTheme.colorScheme.onSurface) },
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Campo de contraseña
+        TextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Contraseña", color = MaterialTheme.colorScheme.onSurface) },
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Mostrar mensaje de error si las credenciales no son correctas
+        if (showError) {
+            Text(
+                text = errorMessage,
+                color = animatedColor,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // Botón de inicio de sesión
+        Button(
+            onClick = {
+                if (email.isEmpty() || password.isEmpty()) {
+                    errorMessage = "Todos los campos son obligatorios"
+                    showError = true
+                } else if (!isEmailValid(email)) {
+                    errorMessage = "Por favor, ingrese un correo válido"
+                    showError = true
+                } else {
+                    // Simula inicio de sesión exitoso para el preview
+                    isLoginSuccessful = true
+                    errorMessage = "Inicio de sesión exitoso. ¡Bienvenido!"
+                    showError = true
+                }
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+        ) {
+            Text(text = "Iniciar sesión", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Botón para recuperar contraseña
+        TextButton(onClick = { navController.navigate("recoverPassword") }) {
+            Text(
+                text = "¿Olvidaste tu contraseña?",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        // Botón para ir a la pantalla de registro
+        TextButton(onClick = { navController.navigate("register") }) {
+            Text(
+                text = "¿No tienes cuenta? Regístrate",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

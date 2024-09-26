@@ -16,6 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.alarmavisual.alarm.CustomAlarmManager
 import com.example.alarmavisual.user.InMemoryUserRepository
 import com.example.alarmavisual.user.UserRepository
+import com.google.firebase.FirebaseApp
 
 class MainActivity : ComponentActivity() {
     // Crear una instancia de UserRepository
@@ -24,6 +25,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        FirebaseApp.initializeApp(this)  // Inicializar Firebase
 
         setContent {
             AlarmaVisualTheme {
