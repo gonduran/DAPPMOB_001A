@@ -31,14 +31,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.alarmavisual.R
 import kotlinx.coroutines.delay
-import com.example.alarmavisual.user.InMemoryUserRepository
-import com.example.alarmavisual.user.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
-fun RegisterScreen(navController: NavHostController, userRepository: UserRepository) {
+fun RegisterScreen(navController: NavHostController) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -377,7 +375,7 @@ fun RegisterScreen(navController: NavHostController, userRepository: UserReposit
 }
 
 @Composable
-fun RegisterFake(navController: NavHostController?, userRepository: UserRepository?) {
+fun RegisterFake(navController: NavHostController?) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -550,6 +548,6 @@ fun RegisterFake(navController: NavHostController?, userRepository: UserReposito
 fun RegisterPreview() {
     // Usamos null para navController y userRepository en el preview
     MaterialTheme {
-        RegisterFake(navController = null, userRepository = null)
+        RegisterFake(navController = null)
     }
 }

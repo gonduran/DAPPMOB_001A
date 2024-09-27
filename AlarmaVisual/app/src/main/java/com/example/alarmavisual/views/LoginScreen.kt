@@ -30,14 +30,12 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.alarmavisual.R
-import com.example.alarmavisual.user.InMemoryUserRepository
-import com.example.alarmavisual.user.UserRepository
 import kotlinx.coroutines.delay
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
-fun LoginScreen(navController: NavHostController, userRepository: UserRepository) {
+fun LoginScreen(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -276,12 +274,12 @@ fun LoginPreview() {
 
     // Simula la pantalla de login
     MaterialTheme {
-        LoginScreenFake(navController = navController, userRepository = InMemoryUserRepository())
+        LoginScreenFake(navController = navController)
     }
 }
 
 @Composable
-fun LoginScreenFake(navController: NavHostController, userRepository: UserRepository) {
+fun LoginScreenFake(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }

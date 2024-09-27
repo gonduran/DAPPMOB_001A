@@ -101,7 +101,7 @@ fun AddAlarmScreen(navController: NavHostController, alarmManager: CustomAlarmMa
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Configurar Alarma", style = MaterialTheme.typography.headlineMedium)
+        Text("Agregar Alarma", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -242,7 +242,7 @@ fun AddAlarmScreen(navController: NavHostController, alarmManager: CustomAlarmMa
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Text("Guardar Alarma")
+                Text("Guardar")
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -302,7 +302,7 @@ fun AddAlarmFake(navController: NavHostController?, alarmManager: CustomAlarmMan
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Configurar Alarma", style = MaterialTheme.typography.headlineMedium)
+        Text("Agregar Alarma", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -407,7 +407,7 @@ fun AddAlarmFake(navController: NavHostController?, alarmManager: CustomAlarmMan
         ) {
             // Botón para guardar
             Button(onClick = { /* Acción simulada de guardar */ }, modifier = Modifier.weight(1f)) {
-                Text("Guardar Alarma")
+                Text("Guardar")
             }
 
             Spacer(modifier = Modifier.width(16.dp))

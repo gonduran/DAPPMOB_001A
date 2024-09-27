@@ -37,7 +37,10 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.example.alarmavisual.MainActivity
@@ -136,12 +139,28 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
                 onDismissRequest = { expanded = false }
             ) {
                 DropdownMenuItem(
+                    text = { Text("Mostrar Ubicación") },
+                    onClick = {
+                        // Navegar hacia la pantalla de ubicación
+                        navController.navigate("locationScreen")
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.LocationOn, contentDescription = "Ubicación")
+                    }
+                )
+                DropdownMenuItem(
                     text = { Text("Cerrar Sesión") },
                     onClick = {
                         FirebaseAuth.getInstance().signOut()
                         navController.navigate("login") {
                             popUpTo("login") { inclusive = true }
                         }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Filled.Logout,
+                            contentDescription = "Cerrar sesión"
+                        )
                     }
                 )
                 DropdownMenuItem(

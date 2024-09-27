@@ -27,13 +27,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.alarmavisual.R
 import kotlinx.coroutines.delay
-import com.example.alarmavisual.user.InMemoryUserRepository
-import com.example.alarmavisual.user.UserRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
-fun RecoverPasswordScreen(navController: NavHostController, userRepository: UserRepository) {
+fun RecoverPasswordScreen(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
@@ -229,12 +227,12 @@ fun RecoverPasswordScreen(navController: NavHostController, userRepository: User
 fun RecoverPasswordScreenPreview() {
     val navController = rememberNavController()
     MaterialTheme {
-        RecoverPasswordFake(navController = navController, userRepository = InMemoryUserRepository())
+        RecoverPasswordFake(navController = navController)
     }
 }
 
 @Composable
-fun RecoverPasswordFake(navController: NavHostController?, userRepository: UserRepository?) {
+fun RecoverPasswordFake(navController: NavHostController?) {
     var email by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }

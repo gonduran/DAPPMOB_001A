@@ -261,7 +261,7 @@ fun EditAlarmScreen(navController: NavHostController, alarmManager: CustomAlarmM
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Text("Actualizar Alarma")
+                Text("Actualizar")
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -432,7 +432,7 @@ fun EditAlarmScreen(
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Text("Actualizar Alarma")
+                Text("Actualizar")
             }
 
             Spacer(modifier = Modifier.width(16.dp))
