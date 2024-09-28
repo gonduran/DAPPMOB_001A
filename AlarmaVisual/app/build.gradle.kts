@@ -80,6 +80,10 @@ dependencies {
     testImplementation(libs.firebase.core)
     testImplementation(libs.firebase.auth)
     testImplementation(libs.firebase.firestore)
+    testImplementation(libs.turbine)
+    testImplementation(platform(libs.firebase.bom))
+    testImplementation(libs.firebase.auth)
+    testImplementation(libs.firebase.firestore)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -95,5 +99,7 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.compose.icons.extended)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
 
 }

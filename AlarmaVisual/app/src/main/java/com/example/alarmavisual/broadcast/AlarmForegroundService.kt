@@ -38,7 +38,7 @@ class AlarmForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Aquí puedes manejar la lógica de la alarma (vibración, reproducción de sonido, etc.)
+        // Manejar la lógica de la alarma (vibración, reproducción de sonido, etc.)
         return START_NOT_STICKY
     }
 
