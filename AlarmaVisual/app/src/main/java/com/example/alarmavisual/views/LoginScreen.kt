@@ -64,7 +64,10 @@ fun LoginScreen(navController: NavHostController) {
     }
 
     // Definir colores de degradado
-    val gradientColors = listOf(Color(0xFFFFFFFF), Color(0xFF77A8AF))
+    val gradientColors = listOf(
+        Color(0xFFFFFFFF),
+        Color(0xFF77A8AF)
+    )
 
     Column(
         modifier = Modifier

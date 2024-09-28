@@ -1,10 +1,5 @@
 package com.example.alarmavisual.views
 
-import android.content.Context
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,122 +20,60 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.alarmavisual.R
+import com.example.alarmavisual.viewmodels.RegisterViewModel
+import com.example.alarmavisual.viewmodels.RegisterViewModelFactory
 import kotlinx.coroutines.delay
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
-import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun RegisterScreen(navController: NavHostController) {
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
-    var showError by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // Proporcionar el contexto al ViewModel
+    val registerViewModel: RegisterViewModel = viewModel(
+        factory = RegisterViewModelFactory(context = context)
+    )
+
+    val name by registerViewModel.name.collectAsState()
+    val email by registerViewModel.email.collectAsState()
+    val password by registerViewModel.password.collectAsState()
+    val confirmPassword by registerViewModel.confirmPassword.collectAsState()
+    val errorMessage by registerViewModel.errorMessage.collectAsState()
+    val showError by registerViewModel.showError.collectAsState()
+    val isRegistrationSuccessful by registerViewModel.isRegistrationSuccessful.collectAsState()
+
+    var isPasswordFocused by remember { mutableStateOf(false) }
     var colorIndex by remember { mutableStateOf(0) }
-    var passwordError by remember { mutableStateOf<String?>(null) }
-    var confirmPasswordError by remember { mutableStateOf<String?>(null) }
-    var isRegistrationSuccessful by remember { mutableStateOf(false) } // Variable para controlar si el registro fue exitoso
-    var isPasswordFocused by remember { mutableStateOf(false) } // Para saber si el campo tiene el foco
 
     val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
     val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
 
-    val context = LocalContext.current
-    // Firebase Auth instance
-    val auth = FirebaseAuth.getInstance()
-    // Firebase Firestore instance
-    val db = FirebaseFirestore.getInstance()
-
-    // Función para manejar errores
-    fun handleError(action: () -> Unit) {
-        try {
-            action()
-        } catch (e: Exception) {
-            errorMessage = "Ocurrió un error inesperado: ${e.message}"
-            showError = true
+    // Definir el color del mensaje basado en el estado de éxito o error
+    val messageColor by remember {
+        derivedStateOf {
+            if (isRegistrationSuccessful) Color.Green else animatedColor
         }
     }
 
-    // Función lambda para validar el correo
-    val isEmailValid: (String) -> Boolean = {
-        android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches()
-    }
+    val gradientColors = listOf(
+        Color(0xFFFFFFFF),
+        Color(0xFF77A8AF)
+    )
 
-    // Función para validar cadenas de texto
-    val validarCaracteresMaliciosos: (String) -> Boolean = { input ->
-        "[<>&\"';*]".toRegex().containsMatchIn(input)
-    }
-
-    // Función para activar la vibración
-    fun vibrateDevice() {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator
-        } else {
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
-
-        vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-    }
-
-    // Función para validar la contraseña
-    fun validarPassword(password: String): String? {
-        if (password.length < 6) {
-            return "La contraseña debe tener al menos 6 caracteres."
-        }
-        if (!password.any { it.isUpperCase() }) {
-            return "La contraseña debe tener al menos una letra mayúscula."
-        }
-        if (!password.any { it.isDigit() }) {
-            return "La contraseña debe tener al menos un dígito."
-        }
-        if (!password.any { "!@#\$%^&*()-_=+[]{}|;:'\",.<>?/`~".contains(it) }) {
-            return "La contraseña debe tener al menos un carácter especial."
-        }
-        // Validar si hay dígitos consecutivos en secuencia (ascendente o descendente) o repetidos
-        for (i in 0 until password.length - 2) {
-            val char1 = password[i]
-            val char2 = password[i + 1]
-            val char3 = password[i + 2]
-
-            // Verificar si son dígitos consecutivos iguales (como "111", "222")
-            if (char1.isDigit() && char1 == char2 && char2 == char3) {
-                return "No puede haber más de 2 dígitos consecutivos iguales."
-            }
-
-            // Verificar si son dígitos consecutivos ascendentes (como "123", "234")
-            if (char1.isDigit() && char2.isDigit() && char3.isDigit()) {
-                val num1 = char1.toString().toInt()
-                val num2 = char2.toString().toInt()
-                val num3 = char3.toString().toInt()
-
-                if (num2 == num1 + 1 && num3 == num2 + 1) {
-                    return "No puede haber secuencias de 3 dígitos consecutivos ascendentes."
-                }
-
-                if (num2 == num1 - 1 && num3 == num2 - 1) {
-                    return "No puede haber secuencias de 3 dígitos consecutivos descendentes."
-                }
-            }
-        }
-        // Si todo está bien, retorna null (sin error)
-        return null
-    }
+    val coroutineScope = rememberCoroutineScope()
 
     // Función para manejar la animación de error
     LaunchedEffect(showError) {
         if (showError) {
-            repeat(10) {
+            repeat(registerViewModel.repeatTimes) {
                 colorIndex = (colorIndex + 1) % errorColors.size
-                vibrateDevice()
-                delay(500)
+                delay(registerViewModel.delayDuration)
             }
-            showError = false
+            registerViewModel.resetShowError()
         }
     }
 
@@ -149,13 +82,10 @@ fun RegisterScreen(navController: NavHostController) {
         if (isRegistrationSuccessful) {
             delay(2000)
             navController.navigate("login")
+            // Restablecer el estado de registro exitoso
+            registerViewModel.resetRegisterSuccess()
         }
     }
-
-    val gradientColors = listOf(
-        Color(0xFFFFFFFF),
-        Color(0xFF77A8AF)
-    )
 
     Column(
         modifier = Modifier
@@ -181,7 +111,7 @@ fun RegisterScreen(navController: NavHostController) {
         // Campo Nombre
         TextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = { registerViewModel.onNameChange(it) },
             label = { Text("Nombre", color = MaterialTheme.colorScheme.onSurface) },
             singleLine = true,
             colors = TextFieldDefaults.colors(
@@ -196,7 +126,7 @@ fun RegisterScreen(navController: NavHostController) {
         // Campo Correo Electrónico
         TextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = { registerViewModel.onEmailChange(it) },
             label = { Text("Correo electrónico", color = MaterialTheme.colorScheme.onSurface) },
             singleLine = true,
             colors = TextFieldDefaults.colors(
@@ -211,10 +141,7 @@ fun RegisterScreen(navController: NavHostController) {
         // Campo Contraseña
         TextField(
             value = password,
-            onValueChange = {
-                password = it
-                passwordError = validarPassword(it)
-            },
+            onValueChange = { registerViewModel.onPasswordChange(it) },
             label = { Text("Contraseña", color = MaterialTheme.colorScheme.onSurface) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
@@ -242,10 +169,7 @@ fun RegisterScreen(navController: NavHostController) {
         // Campo Confirmar Contraseña
         TextField(
             value = confirmPassword,
-            onValueChange = {
-                confirmPassword = it
-                confirmPasswordError = validarPassword(it)
-            },
+            onValueChange = { registerViewModel.onConfirmPasswordChange(it) },
             label = { Text("Confirmar contraseña", color = MaterialTheme.colorScheme.onSurface) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
@@ -261,7 +185,7 @@ fun RegisterScreen(navController: NavHostController) {
         if (showError) {
             Text(
                 text = errorMessage,
-                color = animatedColor,
+                color = messageColor,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.fillMaxWidth(),
@@ -274,77 +198,8 @@ fun RegisterScreen(navController: NavHostController) {
         // Botón para registrar el usuario
         Button(
             onClick = {
-                handleError {
-                    when {
-                        name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() -> {
-                            errorMessage = "Todos los campos son obligatorios."
-                            showError = true
-                        }
-                        !isEmailValid(email) -> {
-                            errorMessage = "Por favor, ingrese un correo válido."
-                            showError = true
-                        }
-                        validarCaracteresMaliciosos(name) || validarCaracteresMaliciosos(email) ||
-                                validarCaracteresMaliciosos(password) || validarCaracteresMaliciosos(confirmPassword) -> {
-                            errorMessage = "Alerta: Se detectaron caracteres potencialmente maliciosos."
-                            showError = true
-                        }
-                        passwordError != null -> {
-                            errorMessage = passwordError.toString()
-                            showError = true
-                        }
-                        confirmPasswordError != null -> {
-                            errorMessage = confirmPasswordError.toString()
-                            showError = true
-                        }
-                        password != confirmPassword -> {
-                            errorMessage = "Las contraseñas no coinciden."
-                            showError = true
-                        }
-                        else -> {
-                            // Registro en Firebase Authentication
-                            auth.createUserWithEmailAndPassword(email, password)
-                                .addOnCompleteListener { task ->
-                                    if (task.isSuccessful) {
-                                        // Registro exitoso
-                                        val user = auth.currentUser
-                                        // Guardar el nombre y correo en Firestore
-                                        val userMap = hashMapOf(
-                                            "name" to name,
-                                            "email" to email
-                                        )
-                                        db.collection("users").document(user?.uid ?: "")
-                                            .set(userMap)
-                                            .addOnSuccessListener {
-                                                // Enviar correo de verificación
-                                                user?.sendEmailVerification()
-                                                    ?.addOnCompleteListener { emailTask ->
-                                                        if (emailTask.isSuccessful) {
-                                                            errorMessage = "Registro exitoso. Por favor, verifica tu correo."
-                                                            showError = true
-                                                            isRegistrationSuccessful = true // Activar la navegación después del registro exitoso
-                                                        } else {
-                                                            errorMessage = "Error al enviar el correo de verificación: ${emailTask.exception?.message}"
-                                                            showError = true
-                                                        }
-                                                    }
-                                            }
-                                            .addOnFailureListener { e ->
-                                                errorMessage = "Error al guardar el usuario en Firestore: $e"
-                                                showError = true
-                                            }
-                                    } else {
-                                        if (task.exception is FirebaseAuthUserCollisionException) {
-                                            errorMessage = "El correo ya está registrado."
-                                            showError = true
-                                        } else {
-                                            errorMessage = "Error en el registro: ${task.exception?.message}. Inténtalo nuevamente."
-                                            showError = true
-                                        }
-                                    }
-                                }
-                        }
-                    }
+                coroutineScope.launch {
+                    registerViewModel.register()
                 }
             },
             colors = ButtonDefaults.buttonColors(
@@ -372,42 +227,39 @@ fun RegisterScreen(navController: NavHostController) {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+fun RegisterPreview() {
+    // Usamos RegisterFake para la vista previa sin lógica
+    MaterialTheme {
+        RegisterFake(navController = null)
+    }
+}
+
 @Composable
 fun RegisterFake(navController: NavHostController?) {
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
-    var showError by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("Test User") }
+    var email by remember { mutableStateOf("test@example.com") }
+    var password by remember { mutableStateOf("Password1!") }
+    var confirmPassword by remember { mutableStateOf("Password1!") }
+    var errorMessage by remember { mutableStateOf("Registro exitoso. Por favor, verifica tu correo.") }
+    var showError by remember { mutableStateOf(true) }
     var colorIndex by remember { mutableStateOf(0) }
-    var passwordError by remember { mutableStateOf<String?>(null) }
-    var confirmPasswordError by remember { mutableStateOf<String?>(null) }
-    var isRegistrationSuccessful by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
 
     val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
     val animatedColor by animateColorAsState(targetValue = errorColors[colorIndex])
 
-    val context = LocalContext.current
-
-    // Función para activar la vibración
-    fun vibrateDevice() {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator
-        } else {
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
-        vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-    }
+    val gradientColors = listOf(
+        Color(0xFFFFFFFF),
+        Color(0xFF77A8AF)
+    )
 
     // Función para manejar la animación de error
     LaunchedEffect(showError) {
         if (showError) {
             repeat(10) {
                 colorIndex = (colorIndex + 1) % errorColors.size
-                vibrateDevice()
                 delay(500)
             }
             showError = false
@@ -415,17 +267,12 @@ fun RegisterFake(navController: NavHostController?) {
     }
 
     // Delay y navegación después de un registro exitoso
-    LaunchedEffect(isRegistrationSuccessful) {
-        if (isRegistrationSuccessful) {
+    LaunchedEffect(showError) {
+        if (showError && errorMessage.startsWith("Registro exitoso")) {
             delay(2000)
             navController?.navigate("login")
         }
     }
-
-    val gradientColors = listOf(
-        Color(0xFFFFFFFF),
-        Color(0xFF77A8AF)
-    )
 
     Column(
         modifier = Modifier
@@ -525,6 +372,7 @@ fun RegisterFake(navController: NavHostController?) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
+                .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
         ) {
             Text(
                 text = "Registrarse",
@@ -538,14 +386,5 @@ fun RegisterFake(navController: NavHostController?) {
         TextButton(onClick = { navController?.navigate("login") }) {
             Text("Volver")
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RegisterPreview() {
-    // Usamos null para navController y userRepository en el preview
-    MaterialTheme {
-        RegisterFake(navController = null)
     }
 }

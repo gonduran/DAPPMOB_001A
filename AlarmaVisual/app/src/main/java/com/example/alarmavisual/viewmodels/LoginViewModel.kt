@@ -1,4 +1,3 @@
-// LoginViewModel.kt
 package com.example.alarmavisual.viewmodels
 
 import androidx.compose.ui.graphics.Color
@@ -15,9 +14,9 @@ class LoginViewModel(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
     private val vibratorHelper: VibratorHelper,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Main, // Añadido para pruebas
-    private val delayDuration: Long = 500L, // Añadido para controlar el delay en pruebas
-    private val repeatTimes: Int = 10       // Añadido para controlar las repeticiones en pruebas
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val delayDuration: Long = 500L,
+    private val repeatTimes: Int = 10
 ) : ViewModel() {
 
     // Estados para email y contraseña
@@ -136,7 +135,7 @@ class LoginViewModel(
     private fun triggerSuccessEffect() {
         viewModelScope.launch(dispatcher) {
             vibratorHelper.vibrateSuccess()
-            // Puedes agregar más efectos aquí si lo deseas
+            // Se puede agregar más efectos aquí
         }
     }
 
