@@ -1,45 +1,45 @@
+// LoginViewModel.kt
 package com.example.alarmavisual.viewmodels
 
-import android.content.Context
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.alarmavisual.helpers.VibratorHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class LoginViewModel(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
-    private val context: Context
+    private val vibratorHelper: VibratorHelper,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Main, // Añadido para pruebas
+    private val delayDuration: Long = 500L, // Añadido para controlar el delay en pruebas
+    private val repeatTimes: Int = 10       // Añadido para controlar las repeticiones en pruebas
 ) : ViewModel() {
 
     // Estados para email y contraseña
     private val _email = MutableStateFlow("")
-    val email: StateFlow<String> = _email.asStateFlow()
+    val email: StateFlow<String> = _email
 
     private val _password = MutableStateFlow("")
-    val password: StateFlow<String> = _password.asStateFlow()
+    val password: StateFlow<String> = _password
 
     // Estados para mensajes y errores
     private val _errorMessage = MutableStateFlow("")
-    val errorMessage: StateFlow<String> = _errorMessage.asStateFlow()
+    val errorMessage: StateFlow<String> = _errorMessage
 
     private val _showError = MutableStateFlow(false)
-    val showError: StateFlow<Boolean> = _showError.asStateFlow()
+    val showError: StateFlow<Boolean> = _showError
 
     private val _isLoginSuccessful = MutableStateFlow(false)
-    val isLoginSuccessful: StateFlow<Boolean> = _isLoginSuccessful.asStateFlow()
+    val isLoginSuccessful: StateFlow<Boolean> = _isLoginSuccessful
 
-    // Indice para animación de colores de error
+    // Índice para animación de colores de error
     private val _colorIndex = MutableStateFlow(0)
-    val colorIndex: StateFlow<Int> = _colorIndex.asStateFlow()
+    val colorIndex: StateFlow<Int> = _colorIndex
 
     // Lista de colores de error
     val errorColors = listOf(Color.Red, Color.Yellow, Color.Magenta)
@@ -55,7 +55,9 @@ class LoginViewModel(
 
     // Función para validar email
     private fun isEmailValid(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        // Reemplazamos Patterns.EMAIL_ADDRESS por una expresión regular personalizada
+        val emailRegex = "^[A-Za-z](.*)([@]{1})(.{1,})(\\.)(.{1,})"
+        return email.matches(emailRegex.toRegex())
     }
 
     // Función para iniciar sesión
@@ -120,11 +122,11 @@ class LoginViewModel(
     // Función para manejar el efecto de error (vibración y cambio de color)
     private fun triggerErrorEffect() {
         _showError.value = true
-        viewModelScope.launch {
-            repeat(10) {
+        viewModelScope.launch(dispatcher) {
+            repeat(repeatTimes) {
                 _colorIndex.value = (_colorIndex.value + 1) % errorColors.size
-                vibrateDevice()
-                delay(500)
+                vibratorHelper.vibrateError()
+                delay(delayDuration)
             }
             _showError.value = false
         }
@@ -132,43 +134,9 @@ class LoginViewModel(
 
     // Función para manejar el efecto de éxito
     private fun triggerSuccessEffect() {
-        viewModelScope.launch {
-            vibrateDeviceSuccess()
+        viewModelScope.launch(dispatcher) {
+            vibratorHelper.vibrateSuccess()
             // Puedes agregar más efectos aquí si lo deseas
-        }
-    }
-
-    // Función para vibrar el dispositivo (error)
-    private fun vibrateDevice() {
-        val vibrator = getVibrator()
-        try {
-            vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-        } catch (e: Exception) {
-            // Manejar excepción si es necesario
-            e.printStackTrace()
-        }
-    }
-
-    // Función para vibrar el dispositivo (éxito)
-    private fun vibrateDeviceSuccess() {
-        val vibrator = getVibrator()
-        try {
-            // Vibración diferente para éxito (por ejemplo, doble vibración corta)
-            val pattern = longArrayOf(0, 500, 100, 500)
-            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
-        } catch (e: Exception) {
-            // Manejar excepción si es necesario
-            e.printStackTrace()
-        }
-    }
-
-    // Función para obtener el Vibrator
-    private fun getVibrator(): Vibrator {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator
-        } else {
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
     }
 
