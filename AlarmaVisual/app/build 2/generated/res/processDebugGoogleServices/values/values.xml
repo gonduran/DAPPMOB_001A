@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="gcm_defaultSenderId" translatable="false">455871682263</string>
-    <string name="google_api_key" translatable="false">AIzaSyBi16IINx92LFJNHwKZ41IkUfzL2JLR0iQ</string>
-    <string name="google_app_id" translatable="false">1:455871682263:android:fcb450005802f227ef4292</string>
-    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyBi16IINx92LFJNHwKZ41IkUfzL2JLR0iQ</string>
-    <string name="google_storage_bucket" translatable="false">alarmavisualapp.appspot.com</string>
-    <string name="project_id" translatable="false">alarmavisualapp</string>
-</resources>
