@@ -85,7 +85,7 @@ fun AlarmScreen(navController: NavController, alarmManager: CustomAlarmManager) 
 
         // Navegar de vuelta a ClockScreen
         if (!navController.popBackStack()) {
-            navController.navigate("alarmListScreen") // Navegar manualmente si no puede hacer pop
+            navController.navigate("alarmList") // Navegar manualmente si no puede hacer pop
         }
     }
 

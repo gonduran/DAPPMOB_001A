@@ -89,7 +89,7 @@ fun LoginScreen(navController: NavHostController) {
     LaunchedEffect(isLoginSuccessful) {
         if (isLoginSuccessful) {
             delay(2000) // Espera 2 segundos antes de navegar
-            navController.navigate("alarmListScreen")
+            navController.navigate("homeMenu")
         }
     }
 

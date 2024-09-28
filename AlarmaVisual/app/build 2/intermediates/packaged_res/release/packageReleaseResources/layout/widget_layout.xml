@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:background="@android:color/white">
+
+    <!-- Imagen del widget a la izquierda -->
+    <ImageView
+        android:id="@+id/widget_image"
+        android:layout_width="78dp"
+        android:layout_height="78dp"
+        android:src="@drawable/logoreloj"
+        android:contentDescription="@string/widget_image_desc"
+        android:layout_gravity="center_vertical"
+        android:layout_marginEnd="8dp"/>
+
+    <!-- Contenedor para los textos de la alarma -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_alarm_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="09:00"
+            android:textSize="28sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/widget_alarm_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Proxima alarma"
+            android:textSize="18sp"
+            android:paddingTop="4dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>

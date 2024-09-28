@@ -124,56 +124,6 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Menú superior con opciones de cerrar sesión y salir
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .wrapContentSize(Alignment.TopEnd)
-        ) {
-            IconButton(onClick = { expanded = true }) {
-                Icon(Icons.Filled.MoreVert, contentDescription = "Menu")
-            }
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Mostrar Ubicación") },
-                    onClick = {
-                        // Navegar hacia la pantalla de ubicación
-                        navController.navigate("locationScreen")
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Default.LocationOn, contentDescription = "Ubicación")
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Cerrar Sesión") },
-                    onClick = {
-                        FirebaseAuth.getInstance().signOut()
-                        navController.navigate("login") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Logout,
-                            contentDescription = "Cerrar sesión"
-                        )
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Salir") },
-                    onClick = {
-                        (context as? MainActivity)?.finish()
-                    },
-                    leadingIcon = {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Salir")
-                    }
-                )
-            }
-        }
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Alarmas Configuradas", style = MaterialTheme.typography.headlineMedium)
@@ -211,7 +161,7 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
                     // Botón para editar con icono
                     IconButton(
                         onClick = {
-                            navController.navigate("editAlarmScreen/${alarm.id}")
+                            navController.navigate("editAlarm/${alarm.id}")
                         },
                         modifier = Modifier.size(48.dp)
                     ) {
@@ -255,8 +205,35 @@ fun AlarmListScreen(navController: NavHostController, alarmManager: CustomAlarmM
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { navController.navigate("addAlarmScreen") }) {
-            Text("Agregar Alarma")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween // Para separar los botones
+        ) {
+            // Botón "Agregar Alarma"
+            Button(
+                onClick = { navController.navigate("addAlarm") },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Agregar Alarma")
+            }
+
+            Spacer(modifier = Modifier.width(16.dp)) // Espacio entre los dos botones
+
+            // Botón "Volver al Home Menu"
+            Button(
+                onClick = { navController.navigate("homeMenu") },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary
+                )
+            ) {
+                Text("Volver")
+            }
         }
 
         // Mostrar mensaje de error si las credenciales no son correctas
@@ -330,11 +307,16 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
                 set(Calendar.DAY_OF_WEEK, dayOfWeek)
             }
 
+            // Si la hora configurada ya ha pasado, agendar para la próxima semana
             if (calendar.timeInMillis < System.currentTimeMillis()) {
                 calendar.add(Calendar.WEEK_OF_YEAR, 1)
             }
 
-            val intent = Intent(context, AlarmReceiver::class.java)
+            val intent = Intent(context, AlarmReceiver::class.java).apply {
+                // Puedes agregar extras aquí para pasar información a AlarmReceiver
+                putExtra("alarm_time", time)
+                putExtra("alarm_day", day)
+            }
             val pendingIntentId = dayOfWeek * 100 + hour * 60 + minute
 
             val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -349,7 +331,7 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
                 )
             }
 
-            // Usamos la función inline para manejar errores
+            // Establecer la alarma utilizando setExactAndAllowWhileIdle para Doze mode
             handleOperationWithError({
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
@@ -362,8 +344,9 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
                 Toast.makeText(context, "Error al programar la alarma para $day: ${e.message}", Toast.LENGTH_LONG).show()
             })
         }
+        //Toast.makeText(context, "Alarma programada", Toast.LENGTH_SHORT).show()
     } else {
-        // Cancelar las alarmas si no está activa
+        // Cancelar las alarmas si no están activas
         days.forEach { day ->
             val dayOfWeek = daysOfWeekMap[day] ?: return@forEach
             val pendingIntentId = dayOfWeek * 100 + hour * 60 + minute
@@ -372,6 +355,8 @@ fun scheduleAlarm(context: Context, time: String, isActive: Boolean, days: List<
                 context, pendingIntentId, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
             )
+
+            // Cancelar la alarma
             handleOperationWithError({
                 alarmManager.cancel(pendingIntent)
             }, { e ->

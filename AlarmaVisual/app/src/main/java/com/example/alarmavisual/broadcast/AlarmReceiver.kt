@@ -3,6 +3,8 @@ package com.example.alarmavisual.broadcast
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.core.content.ContextCompat
+import com.example.alarmavisual.broadcast.AlarmForegroundService
 import com.example.alarmavisual.MainActivity
 
 class AlarmReceiver : BroadcastReceiver() {
@@ -16,5 +18,9 @@ class AlarmReceiver : BroadcastReceiver() {
 
         // Iniciar MainActivity automáticamente
         context.startActivity(activityIntent)
+
+        // Iniciar el servicio en primer plano para manejar la alarma
+        val serviceIntent = Intent(context, AlarmForegroundService::class.java)
+        ContextCompat.startForegroundService(context, serviceIntent)
     }
 }

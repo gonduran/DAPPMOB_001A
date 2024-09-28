@@ -62,19 +62,20 @@ fun AppNavigator(navController: NavHostController, navigateTo: String?, alarmMan
         composable("register") { RegisterScreen(navController = navController) }
         composable("recoverPassword") { RecoverPasswordScreen(navController = navController) }
 
-        composable("alarmListScreen") { AlarmListScreen(navController = navController, alarmManager = alarmManager) }
-        composable("addAlarmScreen") { AddAlarmScreen(navController = navController, alarmManager = alarmManager) }
+        composable("homeMenu") { HomeMenuScreen(navController = navController, alarmManager = alarmManager) }
+        composable("alarmList") { AlarmListScreen(navController = navController, alarmManager = alarmManager) }
+        composable("addAlarm") { AddAlarmScreen(navController = navController, alarmManager = alarmManager) }
         // Pasar el alarmId como argumento
-        composable("editAlarmScreen/{alarmId}") { backStackEntry ->
+        composable("editAlarm/{alarmId}") { backStackEntry ->
             val alarmId = backStackEntry.arguments?.getString("alarmId")
             alarmId?.let {
                 EditAlarmScreen(navController = navController, alarmManager = alarmManager, alarmId = it)
             } ?: run {
-                Toast.makeText(navController.context, "Error: Alarm ID not found", Toast.LENGTH_LONG).show()
+                Toast.makeText(navController.context, "Error: Alarm ID no encontrado", Toast.LENGTH_LONG).show()
             }
         }
 
         composable("activateAlarm") { AlarmScreen(navController = navController, alarmManager = alarmManager) }
-        composable("locationScreen") { LocationScreen(navController = navController) }
+        composable("location") { LocationScreen(navController = navController) }
     }
 }

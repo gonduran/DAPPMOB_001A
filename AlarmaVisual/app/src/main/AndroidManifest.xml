@@ -5,12 +5,17 @@
     <!-- Permiso de vibración -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.SET_ALARM" />
+    <!--  <uses-permission android:name="android.permission.SET_ALARM" /> -->
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -21,15 +26,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AlarmaVisual"
-        tools:targetApi="31">
+        >
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.AlarmaVisual">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -38,6 +41,21 @@
             android:exported="true" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAAedMf3FEEGVk_QJchCxcKBIw-UoLaA7g" />
+            android:value="AIzaSyBi16IINx92LFJNHwKZ41IkUfzL2JLR0iQ" />
+        <service
+            android:name=".broadcast.AlarmForegroundService"
+            android:exported="true"
+            android:foregroundServiceType="shortService"
+            android:permission="android.permission.FOREGROUND_SERVICE" />
+        <receiver android:name=".widget.AlarmWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/app_widget_provider" />
+        </receiver>
     </application>
 </manifest>

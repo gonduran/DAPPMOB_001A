@@ -1,19 +1,18 @@
 package com.example.alarmavisual.alarm
 
+import android.app.AlarmManager
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-
-// Clase de datos que representa una alarma
-data class Alarm(
-    val id: String = "",  // Valor predeterminado
-    val time: String = "",  // Valor predeterminado
-    val days: List<String> = emptyList(),  // Valor predeterminado
-    val active: Boolean = false,  // Valor predeterminado
-    val label: String = "",  // Valor predeterminado
-    val repeat: Boolean = false  // Valor predeterminado
-)
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.example.alarmavisual.widget.AlarmWidgetProvider
+import com.example.alarmavisual.widget.WidgetUpdateWorker
+import java.util.concurrent.TimeUnit
 
 open class CustomAlarmManager(private val context: Context) {
 
@@ -28,7 +27,7 @@ open class CustomAlarmManager(private val context: Context) {
         alarmRef.document(alarm.id)
             .set(alarm)
             .addOnSuccessListener {
-                Toast.makeText(context, "Alarma guardada con éxito", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(context, "Alarma guardada con éxito", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { e ->
                 Toast.makeText(context, "Error al guardar la alarma: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -59,7 +58,7 @@ open class CustomAlarmManager(private val context: Context) {
 
         alarmRef.set(alarm)
             .addOnSuccessListener {
-                Toast.makeText(context, "Alarma actualizada con éxito", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(context, "Alarma actualizada con éxito", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { e ->
                 Toast.makeText(context, "Error al actualizar la alarma: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -106,5 +105,25 @@ open class CustomAlarmManager(private val context: Context) {
         } else {
             Toast.makeText(context, "Usuario no autenticado", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    fun scheduleWidgetUpdateTask(context: Context) {
+        // Crear la solicitud periódica para el WorkManager
+        val widgetUpdateRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
+            15, TimeUnit.MINUTES // Cada 15 minutos
+        ).build()
+
+        // Programar la tarea con WorkManager
+        WorkManager.getInstance(context).enqueue(widgetUpdateRequest)
+    }
+
+    fun forceWidgetUpdate(context: Context) {
+        val intent = Intent(context, AlarmWidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        }
+        val ids = AppWidgetManager.getInstance(context)
+            .getAppWidgetIds(ComponentName(context, AlarmWidgetProvider::class.java))
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        context.sendBroadcast(intent)
     }
 }
