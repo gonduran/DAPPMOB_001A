@@ -7,6 +7,6 @@ plugins {
 }
 buildscript {
     dependencies {
-        classpath("com.android.tools.build:gradle:8.0.0")
+        classpath(libs.gradle)
     }
 }
