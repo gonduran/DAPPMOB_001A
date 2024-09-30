@@ -15,17 +15,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.alarmavisual.alarm.CustomAlarmManager
-import com.example.alarmavisual.ui.theme.AlarmaVisualTheme
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
-fun AlarmScreen(navController: NavController, alarmManager: CustomAlarmManager) {
+fun AlarmScreen(navController: NavController, alarmManager: CustomAlarmManager?) {
     val context = LocalContext.current
     //val scope = rememberCoroutineScope()
     var colorIndex by remember { mutableStateOf(0) }
@@ -85,7 +81,7 @@ fun AlarmScreen(navController: NavController, alarmManager: CustomAlarmManager) 
 
         // Navegar de vuelta a ClockScreen
         if (!navController.popBackStack()) {
-            navController.navigate("alarmListScreen") // Navegar manualmente si no puede hacer pop
+            navController.navigate("alarmList") // Navegar manualmente si no puede hacer pop
         }
     }
 
@@ -129,9 +125,9 @@ fun AlarmScreen(navController: NavController, alarmManager: CustomAlarmManager) 
 @Preview(showBackground = true)
 @Composable
 fun AlarmScreenPreview() {
-    val navController = rememberNavController()
-    val alarmManager = CustomAlarmManager(context = LocalContext.current)
+    val fakeNavController = rememberNavController() // Controlador de navegación falso para el preview
+    val fakeAlarmManager = null // Simulamos un alarmManager nulo
     MaterialTheme {
-        AlarmScreen(navController = navController, alarmManager = alarmManager)
+        AlarmScreen(navController = fakeNavController, alarmManager = fakeAlarmManager)
     }
 }

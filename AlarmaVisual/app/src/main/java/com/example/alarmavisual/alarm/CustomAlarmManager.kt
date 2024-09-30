@@ -1,100 +1,129 @@
 package com.example.alarmavisual.alarm
 
+import android.app.AlarmManager
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.widget.Toast
-import androidx.compose.runtime.mutableStateListOf
-import java.util.UUID
-import android.content.SharedPreferences
-import org.json.JSONArray
-import org.json.JSONObject
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.example.alarmavisual.widget.AlarmWidgetProvider
+import com.example.alarmavisual.widget.WidgetUpdateWorker
+import java.util.concurrent.TimeUnit
 
-// Clase de datos que representa una alarma
-data class Alarm(
-    val id: String,
-    val time: String,
-    val days: List<String>,
-    var isActive: Boolean
-)
+open class CustomAlarmManager(private val context: Context) {
 
-open class CustomAlarmManager(val context: Context) {
+    private val firestore = FirebaseFirestore.getInstance()
 
-    private val sharedPreferences: SharedPreferences = context.getSharedPreferences("alarms_prefs", Context.MODE_PRIVATE)
+    // Función para guardar la alarma en Firestore
+    fun saveAlarmToFirestore(userId: String, alarm: Alarm, context: Context) {
+        val firestore = FirebaseFirestore.getInstance()
+        val alarmRef = firestore.collection("users").document(userId).collection("alarms")
 
-    private val alarms = mutableListOf<Alarm>()
-
-    init {
-        // Cargar alarmas desde SharedPreferences
-        loadAlarmsFromPrefs()
-    }
-
-    // Agregar una alarma a la lista
-    fun addAlarm(time: String, days: List<String>, isActive: Boolean, id: String = UUID.randomUUID().toString()): String {
-        val alarm = Alarm(id, time, days, isActive)
-        alarms.add(alarm)
-        saveAlarmsToPrefs()
-        return id
-    }
-
-    // Obtener todas las alarmas
-    open fun getAlarms(): List<Alarm> {
-        return alarms
-    }
-
-    // Obtener una alarma por su ID
-    fun getAlarmById(id: String): Alarm? {
-        return alarms.find { it.id == id }
-    }
-
-    // Actualizar una alarma existente
-    fun updateAlarm(id: String, time: String, days: List<String>, isActive: Boolean) {
-        val alarmIndex = alarms.indexOfFirst { it.id == id }
-        if (alarmIndex != -1) {
-            val updatedAlarm = alarms[alarmIndex].copy(time = time, days = days, isActive = isActive)
-            alarms[alarmIndex] = updatedAlarm
-            saveAlarmsToPrefs()
-        }
-    }
-
-    // Eliminar una alarma
-    open fun removeAlarm(alarm: Alarm) {
-        alarms.remove(alarm)
-        saveAlarmsToPrefs()
-    }
-
-    // Guardar las alarmas en SharedPreferences
-    private fun saveAlarmsToPrefs() {
-        val editor = sharedPreferences.edit()
-        val alarmArray = JSONArray()
-        for (alarm in alarms) {
-            val alarmObj = JSONObject()
-            alarmObj.put("id", alarm.id)
-            alarmObj.put("time", alarm.time)
-            alarmObj.put("days", JSONArray(alarm.days))
-            alarmObj.put("isActive", alarm.isActive)
-            alarmArray.put(alarmObj)
-        }
-        editor.putString("alarms_list", alarmArray.toString())
-        editor.apply()
-    }
-
-    // Cargar las alarmas desde SharedPreferences
-    private fun loadAlarmsFromPrefs() {
-        val alarmsString = sharedPreferences.getString("alarms_list", null)
-        if (alarmsString != null) {
-            val alarmArray = JSONArray(alarmsString)
-            for (i in 0 until alarmArray.length()) {
-                val alarmObj = alarmArray.getJSONObject(i)
-                val id = alarmObj.getString("id")
-                val time = alarmObj.getString("time")
-                val daysArray = alarmObj.getJSONArray("days")
-                val days = mutableListOf<String>()
-                for (j in 0 until daysArray.length()) {
-                    days.add(daysArray.getString(j))
-                }
-                val isActive = alarmObj.getBoolean("isActive")
-                val alarm = Alarm(id, time, days, isActive)
-                alarms.add(alarm)
+        // Guardar la alarma
+        alarmRef.document(alarm.id)
+            .set(alarm)
+            .addOnSuccessListener {
+                //Toast.makeText(context, "Alarma guardada con éxito", Toast.LENGTH_SHORT).show()
             }
+            .addOnFailureListener { e ->
+                Toast.makeText(context, "Error al guardar la alarma: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    // Función para cargar una alarma desde Firestore
+    fun loadAlarmFromFirestore(userId: String, alarmId: String, callback: (Alarm) -> Unit) {
+        val firestore = FirebaseFirestore.getInstance()
+        val alarmRef = firestore.collection("users").document(userId).collection("alarms").document(alarmId)
+
+        alarmRef.get()
+            .addOnSuccessListener { document ->
+                val alarm = document.toObject(Alarm::class.java)
+                if (alarm != null) {
+                    callback(alarm)
+                }
+            }
+            .addOnFailureListener {
+                // Manejar el error si es necesario
+            }
+    }
+
+    // Función para actualizar una alarma en Firestore
+    fun updateAlarmInFirestore(userId: String, alarm: Alarm, context: Context) {
+        val firestore = FirebaseFirestore.getInstance()
+        val alarmRef = firestore.collection("users").document(userId).collection("alarms").document(alarm.id)
+
+        alarmRef.set(alarm)
+            .addOnSuccessListener {
+                //Toast.makeText(context, "Alarma actualizada con éxito", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(context, "Error al actualizar la alarma: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    // Eliminar alarma en Firestore
+    fun deleteAlarmFromFirestore(alarmId: String, onResult: (Boolean) -> Unit) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val firestore = FirebaseFirestore.getInstance()
+        if (currentUser != null) {
+            val userId = currentUser.uid
+            firestore.collection("users").document(userId).collection("alarms").document(alarmId)
+                .delete()
+                .addOnSuccessListener {
+                    onResult(true) // Indicar que la operación fue exitosa
+                }
+                .addOnFailureListener { e ->
+                    e.printStackTrace()
+                    onResult(false) // Indicar que la operación falló
+                }
+        } else {
+            onResult(false) // Usuario no autenticado
         }
+    }
+
+    fun getAlarmsFromFirestore(context: Context, callback: (List<Alarm>) -> Unit) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val firestore = FirebaseFirestore.getInstance()
+        if (currentUser != null) {
+            val userId = currentUser.uid
+            firestore.collection("users").document(userId).collection("alarms")
+                .get()
+                .addOnSuccessListener { result ->
+                    val alarms = result.documents.mapNotNull { doc ->
+                        doc.toObject(Alarm::class.java)
+                    }
+                    callback(alarms)
+                }
+                .addOnFailureListener { e ->
+                    e.printStackTrace() // Mostrar el error en la consola
+                    Toast.makeText(context, "Error al obtener alarmas: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+        } else {
+            Toast.makeText(context, "Usuario no autenticado", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun scheduleWidgetUpdateTask(context: Context) {
+        // Crear la solicitud periódica para el WorkManager
+        val widgetUpdateRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
+            15, TimeUnit.MINUTES // Cada 15 minutos
+        ).build()
+
+        // Programar la tarea con WorkManager
+        WorkManager.getInstance(context).enqueue(widgetUpdateRequest)
+    }
+
+    fun forceWidgetUpdate(context: Context) {
+        val intent = Intent(context, AlarmWidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        }
+        val ids = AppWidgetManager.getInstance(context)
+            .getAppWidgetIds(ComponentName(context, AlarmWidgetProvider::class.java))
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        context.sendBroadcast(intent)
     }
 }
