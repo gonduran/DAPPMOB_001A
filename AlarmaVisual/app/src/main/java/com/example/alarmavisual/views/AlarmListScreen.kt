@@ -440,8 +440,35 @@ fun AlarmListScreen(navController: NavHostController, fakeAlarms: List<Alarm>) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { navController.navigate("addAlarmScreen") }) {
-            Text("Agregar Alarma")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween // Para separar los botones
+        ) {
+            // Botón "Agregar Alarma"
+            Button(
+                onClick = { navController.navigate("addAlarm") },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Agregar Alarma")
+            }
+
+            Spacer(modifier = Modifier.width(16.dp)) // Espacio entre los dos botones
+
+            // Botón "Volver al Home Menu"
+            Button(
+                onClick = { navController.navigate("homeMenu") },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary
+                )
+            ) {
+                Text("Volver")
+            }
         }
     }
 }

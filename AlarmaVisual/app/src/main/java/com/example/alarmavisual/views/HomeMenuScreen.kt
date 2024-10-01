@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -75,6 +76,18 @@ fun HomeMenuScreen(navController: NavHostController?, alarmManager: CustomAlarmM
             Icon(Icons.Default.LocationOn, contentDescription = "Mostrar Ubicación")
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = "Mostrar Ubicación", fontSize = 18.sp)
+        }
+
+        // Botón para conversación inclusiva
+        Button(
+            onClick = { navController?.navigate("conversation") }, // Navega a la pantalla de conversación inclusiva
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            Icon(Icons.Default.Mic, contentDescription = "Conversar")
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "Conversar", fontSize = 18.sp)
         }
 
         // Botón para cerrar sesión

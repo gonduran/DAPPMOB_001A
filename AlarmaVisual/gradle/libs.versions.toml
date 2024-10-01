@@ -6,6 +6,7 @@ firebaseAuth = "23.0.0"
 firebaseBom = "33.3.0"
 firebaseCore = "21.1.1"
 firebaseFirestore = "25.1.0"
+googleTts = "7.2.0"
 gradle = "8.0.2"
 kotlin = "1.9.0"
 coreKtx = "1.13.1"
@@ -49,6 +50,9 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-core = { module = "com.google.firebase:firebase-core", version.ref = "firebaseCore" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore", version.ref = "firebaseFirestore" }
 firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
+google-firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
+google-firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
+google-tts = { module = "com.google.android.tts:google-tts", version.ref = "googleTts" }
 gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

@@ -1,12 +1,14 @@
 package com.example.alarmavisual
 
-import android.os.Build
+import android.app.Application
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alarmavisual.ui.theme.AlarmaVisualTheme
 import com.example.alarmavisual.views.*
 import androidx.navigation.NavHostController
@@ -14,7 +16,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.alarmavisual.alarm.CustomAlarmManager
+import com.example.alarmavisual.viewmodels.ConversationViewModel
+import com.example.alarmavisual.viewmodels.ConversationViewModelFactory
 import com.google.firebase.FirebaseApp
+import android.speech.tts.TextToSpeech
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
 
@@ -77,5 +83,30 @@ fun AppNavigator(navController: NavHostController, navigateTo: String?, alarmMan
 
         composable("activateAlarm") { AlarmScreen(navController = navController, alarmManager = alarmManager) }
         composable("location") { LocationScreen(navController = navController) }
+        // Pantalla para la conversación inclusiva
+        composable("conversation") {
+            val context = LocalContext.current
+
+            // Crear una instancia de TextToSpeech
+            val textToSpeech = remember {
+                TextToSpeech(context) {
+                    if (it != TextToSpeech.SUCCESS) {
+                        Toast.makeText(context, "Error inicializando TextToSpeech", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            // Crear la instancia del ViewModel usando la fábrica
+            val viewModel: ConversationViewModel = viewModel(
+                factory = ConversationViewModelFactory(
+                    context.applicationContext as Application,
+                    textToSpeech,
+                    firestore = FirebaseFirestore.getInstance()
+                )
+            )
+
+            // Llamar a la pantalla de conversación y pasar el ViewModel
+            ConversationScreen(navController = navController, viewModel = viewModel)
+        }
     }
 }
